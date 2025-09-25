@@ -1,0 +1,487 @@
+@charset "UTF-8";
+header {
+  background: #222222;
+  color: white;
+  padding: 15px 0;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  margin-bottom: 60px;
+}
+
+.logo {
+  height: 40px;
+}
+
+.userNav {
+  margin-left: 30px;
+  position: relative;
+  display: flex;
+}
+
+.ingredients {
+  justify-self: center;
+  height: 30px;
+  margin-bottom: 20px;
+  width: 160px;
+}
+
+.ingredients-column {
+  margin-left: 30px;
+}
+
+.site-title {
+  margin: 0;
+  font-size: 28px;
+  flex-grow: 1;
+  font-weight: 700;
+}
+
+.site-title a {
+  color: inherit;
+  text-decoration: none;
+}
+
+.site-title a:hover,
+.site-title a:focus {
+  text-decoration: underline;
+  outline: none;
+}
+
+.site-title h1 {
+  color: inherit;
+  text-decoration: none;
+}
+
+.site-title h1:hover,
+.site-title h1:focus {
+  text-decoration: underline;
+  outline: none;
+}
+
+.category-nav {
+  max-width: 1300px;
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+}
+
+.category-btn {
+  background: white;
+  border: 2px solid grey;
+  color: black;
+  padding: 6px 14px;
+  border-radius: 20px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.category-btn:hover,
+.category-btn.active {
+  background: white;
+  color: black;
+  border-color: orange;
+}
+
+.user-avatar-btn {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: none;
+  background-color: #444;
+  background-size: cover;
+  background-position: center;
+  cursor: pointer;
+  position: relative;
+  flex-shrink: 0;
+}
+
+/* Плейсхолдер иконки 👤, показывается если нет аватара */
+.user-avatar-btn::before {
+  content: "👤";
+  font-size: 24px;
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  width: 100%;
+  position: absolute;
+  top: 0;
+  left: 0;
+  -webkit-user-select: none;
+     -moz-user-select: none;
+          user-select: none;
+  pointer-events: none;
+}
+
+/* Скрываем плейсхолдер, если есть аватар (через класс has-avatar) */
+.user-avatar-btn.has-avatar::before {
+  content: "";
+}
+
+.user-menu {
+  position: absolute;
+  top: 50px;
+  right: 0;
+  background: white;
+  color: #222;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  min-width: 160px;
+  z-index: 150;
+  display: none;
+  flex-direction: column;
+}
+
+.user-menu button {
+  background: none;
+  border: none;
+  padding: 10px 15px;
+  text-align: left;
+  width: 100%;
+  cursor: pointer;
+  font-size: 14px;
+  color: #222;
+  transition: background-color 0.2s;
+}
+
+.user-menu button:hover,
+.user-menu button:focus {
+  background-color: #eee;
+  outline: none;
+}
+
+.btn-add-header {
+  background-color: #27ae60;
+  border: none;
+  width: 200px;
+  height: 40px;
+  color: white;
+  padding: 10px 20px;
+  font-weight: 700;
+  border-radius: 25px;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+
+.btn-add-header:hover {
+  background-color: #1e8449;
+}
+
+.recipes-section {
+  display: flex;
+  flex-direction: column;
+  width: 1050px;
+}
+
+.recipes-header {
+  height: 30px;
+  margin-bottom: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.sortNav button {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #555;
+  border-radius: 4px;
+  transition: background-color 0.3s, color 0.3s;
+  font-weight: 600;
+}
+
+.recipe-list-section {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 30px;
+  margin-top: 0;
+}
+
+.recipe-card {
+  width: 330px;
+  height: 350px;
+  display: flex;
+  flex-direction: column;
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+  cursor: pointer;
+  transition: box-shadow 0.3s;
+  overflow: hidden;
+  padding: 0;
+}
+
+.recipe-card:hover,
+.recipe-card:focus-visible {
+  box-shadow: 0 6px 15px rgba(0, 0, 0, 0.1);
+  outline: none;
+}
+
+.recipe-card img {
+  width: 100%;
+  height: 180px;
+  -o-object-fit: cover;
+     object-fit: cover;
+  border-bottom: 1px solid #ddd;
+  flex-shrink: 0;
+  display: block;
+}
+
+.recipe-card .recipe-info {
+  padding: 12px 15px;
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  font-size: 14px;
+  color: #333;
+}
+
+.recipe-info {
+  font-weight: 600;
+  color: #555;
+}
+
+.recipe-card .recipe-name {
+  font-size: 18px;
+  color: #2c3e50;
+  margin: 0 0 8px 0;
+  flex-shrink: 0;
+  margin-top: 0;
+  margin-bottom: 15px;
+  font-weight: 600;
+  color: #2c3e50;
+}
+
+.recipe-card .recipe-meta {
+  font-weight: 600;
+  color: #555;
+}
+
+.recipe-card .recipe-meta p {
+  margin: 4px 0;
+}
+
+#ingredientsFilter {
+  width: 180px;
+  max-height: 80vh;
+  overflow-y: auto;
+  border-radius: 6px;
+  padding: 5px;
+  background: #f9f9f9;
+  box-shadow: 0 0 8px rgba(0, 0, 0, 0.1);
+  display: flex;
+  flex-direction: column;
+}
+
+#ingredientsList {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  max-height: 60vh;
+  overflow-y: auto;
+}
+
+#ingredientsList li {
+  position: relative;
+  cursor: pointer;
+  -webkit-user-select: none;
+     -moz-user-select: none;
+          user-select: none;
+  padding: 5px 10px;
+  border-radius: 5px;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.checkbox-custom {
+  width: 16px;
+  height: 16px;
+  border-radius: 3px;
+  border: 2px solid #ccc;
+  display: inline-block;
+  position: relative;
+  flex-shrink: 0;
+}
+
+.checkbox-custom svg {
+  position: absolute;
+  top: 0px;
+  left: 0px;
+  width: 12px;
+  height: 12px;
+  fill: none;
+  stroke-width: 2.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+#ingredientsFilter input[type=text] {
+  margin-top: 10px;
+  padding: 8px 12px;
+  font-size: 14px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  font-family: inherit;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+#btnAddIngredient,
+#btnAddNewIngredient {
+  background-color: #27ae60;
+  border: none;
+  color: white;
+  padding: 8px 20px;
+  font-weight: 700;
+  border-radius: 25px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: background-color 0.3s;
+  margin-top: 6px;
+  align-self: flex-start;
+}
+
+#btnAddNewIngredient {
+  margin-top: 8px;
+  background-color: #27ae60;
+  border: none;
+  color: white;
+  padding: 8px 20px;
+  font-weight: 700;
+  border-radius: 25px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: background-color 0.3s;
+  width: 100%;
+}
+
+/* Кастомный чекбокс */
+.checkbox-custom {
+  width: 16px;
+  height: 16px;
+  border-radius: 3px;
+  border: 2px solid #ccc;
+  display: inline-block;
+  position: relative;
+  flex-shrink: 0;
+  background-color: #fff;
+  cursor: pointer;
+}
+
+li.exclude .checkbox-custom svg {
+  display: none;
+}
+
+li.exclude .checkbox-custom::after {
+  content: "-";
+  position: absolute;
+  top: 40%;
+  left: 55%;
+  transform: translate(-50%, -50%);
+  font-size: 16px;
+  color: #c0392b;
+  -webkit-user-select: none;
+     -moz-user-select: none;
+          user-select: none;
+  pointer-events: none;
+}
+
+.main {
+  max-width: 1320px;
+  margin: 0 auto;
+  background: white;
+  padding: 20px 20px 20px 40px;
+  border-radius: 10px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+  display: flex;
+  gap: 35px;
+}
+
+.main-content {
+  flex-grow: 1;
+  max-width: 1320px;
+  margin: 60px auto 60px;
+}
+
+.sortNav {
+  display: flex;
+  gap: 15px;
+  font-weight: 600;
+  font-size: 14px;
+}
+
+footer {
+  height: 70px;
+  display: flex;
+  justify-content: center;
+  background: #222222;
+  color: white;
+  padding: 15px 40px;
+  box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.15);
+  flex-shrink: 0;
+  align-items: center;
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+}
+
+footer p {
+  text-align: center;
+}
+
+.profileAvatarPreviewSection {
+  max-width: 150px;
+  border-radius: 50%;
+  margin-top: 10px;
+  display: none;
+}
+
+#myRecipesSection h2 {
+  margin: 20px 0;
+}
+
+#imagePreview {
+  max-width: 100%;
+  margin-top: 10px;
+  display: none;
+  border-radius: 8px;
+}
+
+#recipeViewImage {
+  max-width: 100%;
+  border-radius: 8px;
+  margin-bottom: 15px;
+  display: none;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+  background-image: url(../img/1679657594_bogatyr-club-p-fon-shkolnii-serii-krasivo-36.jpg);
+  color: #333;
+}
+
+.container {
+  max-width: 1320px;
+  margin: 0 auto;
+  display: flex;
+}/*# sourceMappingURL=styles.css.map */

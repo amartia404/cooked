@@ -1,0 +1,144 @@
+#ingredientsFilter {
+  width: 180px;
+  max-height: 80vh;
+  overflow-y: auto;
+  border-radius: 6px;
+  padding: 5px;
+  background: #f9f9f9;
+  box-shadow: 0 0 8px rgba(0,0,0,0.1);
+  display: flex;
+  flex-direction: column;
+}
+
+#ingredientsList {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  max-height: 60vh;
+  overflow-y: auto;
+}
+
+#ingredientsList li {
+  position: relative;
+  cursor: pointer;
+  user-select: none;
+  padding: 5px 10px;
+  border-radius: 5px;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.checkbox-custom {
+  width: 16px;
+  height: 16px;
+  border-radius: 3px;
+  border: 2px solid #ccc;
+  display: inline-block;
+  position: relative;
+  flex-shrink: 0;
+}
+
+.checkbox-custom svg {
+  position: absolute;
+  top: 0px;
+  left: 0px;
+  width: 12px;
+  height: 12px;
+  fill: none;
+  stroke-width: 2.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+#ingredientsFilter input[type="text"] {
+  margin-top: 10px;
+  padding: 8px 12px;
+  font-size: 14px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  font-family: inherit;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+#btnAddIngredient,
+#btnAddNewIngredient {
+  background-color: #27ae60;
+  border: none;
+  color: white;
+  padding: 8px 20px;
+  font-weight: 700;
+  border-radius: 25px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: background-color 0.3s;
+  margin-top: 6px;
+  align-self: flex-start;
+}
+
+#btnAddNewIngredient {
+  margin-top: 8px;
+  background-color: #27ae60;
+  border: none;
+  color: white;
+  padding: 8px 20px;
+  font-weight: 700;
+  border-radius: 25px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: background-color 0.3s;
+  width: 100%;
+}
+
+/* Кастомный чекбокс */
+.checkbox-custom {
+  width: 16px;
+  height: 16px;
+  border-radius: 3px;
+  border: 2px solid #ccc;
+  display: inline-block;
+  position: relative;
+  flex-shrink: 0;
+  background-color: #fff;
+  cursor: pointer;
+}
+
+// /* Галочка SVG по умолчанию */
+// .checkbox-custom svg {
+//   position: absolute;
+//   top: 0;
+//   left: 0;
+//   width: 12px;
+//   height: 12px;
+//   fill: none;
+//   stroke: #2c3e50;
+//   stroke-width: 2.5;
+//   stroke-linecap: round;
+//   stroke-linejoin: round;
+//   display: block;
+// }
+
+// /* Если ингредиент включен — показываем галочку */
+// li.include .checkbox-custom svg {
+//   display: block;
+// }
+
+li.exclude .checkbox-custom svg {
+  display: none;
+}
+
+li.exclude .checkbox-custom::after {
+  content: "-";
+  position: absolute;
+  top: 40%;
+  left: 55%;
+  transform: translate(-50%, -50%);
+  font-size: 16px;
+  color: #c0392b;
+  user-select: none;
+  pointer-events: none;
+}
