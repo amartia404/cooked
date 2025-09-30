@@ -39,6 +39,26 @@ async function fetchIngredients() {
   }
 }
 
+async function fetchRecipes() {
+  try {
+    const response = await fetch('php/getRecipes.php');
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`HTTP ${response.status} (${response.statusText}): ${errorText}`);
+    }
+    const data = await response.json();
+    if (data.success && Array.isArray(data.recipes)) {
+      state.recipes = data.recipes;
+    } else {
+      console.error("Ошибка в данных рецептов:", data.error || data);
+      state.recipes = [];  // Если нет данных, пустой массив
+    }
+  } catch (err) {
+    console.error("Не удалось загрузить рецепты", err);
+    state.recipes = [];  // Пустой массив при ошибке
+  }
+}
+
   const categoryNav = document.getElementById("categoryNav");
   const ingredientsList = document.getElementById("ingredientsList");
   const newIngredientInput = document.getElementById("newIngredientInput");
@@ -475,7 +495,7 @@ function renderCategories() {
   }
 
   function filterAndRenderRecipes() {
-    let filtered = state.recipes.filter(r => r.status === "approved");
+    let filtered = state.recipes;
 
     if (state.category) {
       filtered = filtered.filter(r => r.category === state.category);
@@ -1344,19 +1364,21 @@ menuItems.forEach(({ id, label }) => {
     console.log(`Пользователь вошел: ${user.username}`);
   }
 
-function init() {
-
+async function init() {
   state.currentUser = window._CURRENT_USER || null;
 
+  // Загружаем данные асинхронно
+  await fetchCategories();
+  await fetchIngredients();
+  await fetchRecipes();  // Добавлено: загружаем рецепты
+
+  // Рендерим интерфейс после загрузки всех данных
   updateUserNav();
   updateAdminNav();
   renderCategories();
-
-  fetchIngredients().then(() => {
-    renderIngredientsFilter();
-    filterAndRenderRecipes();
-  });
-  fetchCategories()
+  renderIngredientsFilter();
+  filterAndRenderRecipes();  // Теперь рецепты загружены, так что фильтрация и рендеринг пройдут
 }
+
   init();
 })();

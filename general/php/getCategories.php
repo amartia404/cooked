@@ -14,7 +14,7 @@ $user = 'root';
 $pass = '';
 $charset = 'utf8mb4';
 
-$conn = new mysqli($host, $user, $password, $db);
+$conn = new mysqli($host, $user, $pass, $db);
 if ($conn->connect_error) {
     echo json_encode(['success' => false, 'error' => 'Database connection failed']);
     exit;
