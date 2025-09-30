@@ -1,4 +1,9 @@
 <?php
+$host = 'localhost';
+$dbname = 'cookbook';
+$username = 'root';
+$password = '';
+
 session_start();
 $isLoggedIn = isset($_SESSION['user_id']);
 $username = $_SESSION['username'] ?? null;
@@ -72,47 +77,25 @@ $avatar = $_SESSION['avatarDataUrl'] ?? "";
 	</div>
 </section>
 
-<!------------------------------------------------------------------------------------------------------->
-<!-- <div class="container">
-	<section id="profileSection" hidden>
-		<div class="container" style="display: block;">
-			<h2>Личный кабинет</h2>
-			<form id="profileFormSection">
-				<label>Имя пользователя<input type="text" id="profileUsernameSection" readonly /></label>
-				<label>Аватар<input type="file" id="profileAvatarInputSection" accept="image/*" /><img id="profileAvatarPreviewSection" class="profileAvatarPreviewSection" alt="Аватар пользователя"/></label>
-				<button type="submit">Сохранить</button>
-			</form>
-		</div>
-	</section>
-
-	<section id="myRecipesSection" hidden>
-		<div class="container" style="display: block;">
-			<h2>Мои рецепты</h2>
-			<div id="myRecipesList"></div>
-		</div>
-	</section>
-</div> -->
-
 <div id="modalOverlay" class="modal-overlay" hidden role="dialog" aria-modal="true" aria-labelledby="modalTitle">
 	<div class="modal-content" role="document">
 		<button id="btnCloseModal" class="btn-close-modal" aria-label="Закрыть форму">×</button>
-		<form id="recipeForm" aria-label="Форма добавления/редактирования рецепта" enctype="multipart/form-data">
-			<h2 id="modalTitle">Добавить новый рецепт</h2>
-			<label>Название рецепта<input type="text" id="inputTitle" placeholder="Например, Борщ" required /></label>
-			<label>Время приготовления (минуты)<input type="number" id="inputCookTime" min="1" placeholder="Например, 45" required /></label>
-			<label>Категория
-				<select id="inputCategory" required>
-					<option value="">Выберите категорию</option>
-					<option value="мясо">Мясо</option>
-					<option value="рыба">Рыба</option>
-					<option value="веганское">Веганское</option>
-					<option value="десерты">Десерты</option>
-				</select>
-			</label>
-			<label>Ингредиенты<div id="ingredientsContainer"></div><button type="button" id="btnAddIngredient">Добавить ингредиент</button></label>
-			<label>Шаги приготовления<div id="stepsContainer"></div><button type="button" id="btnAddStep">Добавить шаг</button></label>
-			<label>Фото рецепта<input type="file" id="inputImageFile" accept="image/*" /><img id="imagePreview" alt="Превью фото рецепта"/></label>
-			<button type="submit" id="btnSubmitRecipe">Добавить рецепт</button>
+		<form id="recipeForm" aria-label="Форма добавления/редактирования рецепта" enctype="multipart/form-data" method="post">
+      <h2 id="modalTitle">Добавить новый рецепт</h2>
+      <label>Название рецепта<input type="text" id="inputTitle" name="title" placeholder="Например, Борщ" required /></label>
+      <label>Время приготовления (минуты)<input type="number" id="inputCookTime" name="cook_time" min="1" placeholder="Например, 45" required /></label>
+      <label>Категория<select id="inputCategory" name="category" required>
+        <option value="">Выберите категорию</option>
+        <option value="мясо">Мясо</option>
+        <option value="рыба">Рыба</option>
+        <option value="веганское">Веганское</option>
+        <option value="десерты">Десерты</option>
+      	</select>
+      </label>
+      <label>Ингредиенты<div id="ingredientsContainer"></div><button type="button" id="btnAddIngredient">Добавить ингредиент</button></label>
+      <label>Шаги приготовления<div id="stepsContainer"></div><button type="button" id="btnAddStep">Добавить шаг</button></label>
+      <label>Фото рецепта<input type="file" id="inputImageFile" name="imageFile" accept="image/*" /><img id="imagePreview" alt="Превью фото рецепта"/></label>
+      <button type="submit" id="btnSubmitRecipe">Добавить рецепт</button>
 		</form>
 	</div>
 </div>
@@ -155,7 +138,6 @@ $avatar = $_SESSION['avatarDataUrl'] ?? "";
 		<p id="recipeViewRating"></p>
 	</div>
 </div>
-<!------------------------------------------------------------------------------------------------------->
 
 <footer>
 	<div class="container">

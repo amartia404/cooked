@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Хост: 127.0.0.1
--- Время создания: Сен 17 2025 г., 10:36
+-- Время создания: Сен 30 2025 г., 02:39
 -- Версия сервера: 10.4.32-MariaDB
 -- Версия PHP: 8.2.12
 
@@ -24,12 +24,36 @@ SET time_zone = "+00:00";
 -- --------------------------------------------------------
 
 --
+-- Структура таблицы `categories`
+--
+
+CREATE TABLE `categories` (
+  `id` int(11) NOT NULL,
+  `key_name` varchar(50) NOT NULL,
+  `label` varchar(100) NOT NULL,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+--
+-- Дамп данных таблицы `categories`
+--
+
+INSERT INTO `categories` (`id`, `key_name`, `label`, `created_at`) VALUES
+(1, '', 'Все', '2025-09-29 23:49:41'),
+(2, 'мясо', 'Мясо', '2025-09-29 23:49:41'),
+(3, 'рыба', 'Рыба', '2025-09-29 23:49:41'),
+(4, 'веганское', 'Веганское', '2025-09-29 23:49:41'),
+(5, 'десерты', 'Десерты', '2025-09-29 23:49:41');
+
+-- --------------------------------------------------------
+
+--
 -- Структура таблицы `ingredients`
 --
 
 CREATE TABLE `ingredients` (
   `id` int(11) NOT NULL,
-  `name` varchar(100) NOT NULL
+  `name` varchar(255) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --
@@ -39,7 +63,9 @@ CREATE TABLE `ingredients` (
 INSERT INTO `ingredients` (`id`, `name`) VALUES
 (8, 'говядина'),
 (22, 'зелень'),
+(25, 'Капуста'),
 (1, 'картофель'),
+(24, 'Картошка'),
 (7, 'курица'),
 (23, 'лавровый лист'),
 (3, 'лук'),
@@ -54,6 +80,7 @@ INSERT INTO `ingredients` (`id`, `name`) VALUES
 (16, 'рис'),
 (10, 'рыба'),
 (14, 'сахар'),
+(26, 'Свекла'),
 (9, 'свинина'),
 (20, 'сливки'),
 (21, 'сметана'),
@@ -85,12 +112,22 @@ CREATE TABLE `recipes` (
   `id` int(11) NOT NULL,
   `user_id` int(11) NOT NULL,
   `title` varchar(255) NOT NULL,
-  `instructions` text DEFAULT NULL,
+  `cook_time` int(10) UNSIGNED NOT NULL DEFAULT 0 COMMENT 'Время готовки в минутах',
+  `category` varchar(255) NOT NULL,
+  `ingredients` text DEFAULT NULL,
+  `steps` text DEFAULT NULL,
   `image_path` varchar(255) DEFAULT NULL,
   `status` enum('pending','approved','rejected') DEFAULT 'pending',
   `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
   `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+--
+-- Дамп данных таблицы `recipes`
+--
+
+INSERT INTO `recipes` (`id`, `user_id`, `title`, `cook_time`, `category`, `ingredients`, `steps`, `image_path`, `status`, `created_at`, `updated_at`) VALUES
+(1, 2, 'Борщ', 45, 'мясо', NULL, '[\"Заказать еду\"]', 'uploads/recipe_68d988050284a_1cc829ef10e582eefe14c2cd4127dc2b.jpg', 'pending', '2025-09-28 19:09:57', '2025-09-28 19:14:30');
 
 -- --------------------------------------------------------
 
@@ -103,6 +140,15 @@ CREATE TABLE `recipe_ingredients` (
   `ingredient_id` int(11) NOT NULL,
   `amount` varchar(50) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+--
+-- Дамп данных таблицы `recipe_ingredients`
+--
+
+INSERT INTO `recipe_ingredients` (`recipe_id`, `ingredient_id`, `amount`) VALUES
+(1, 24, NULL),
+(1, 25, NULL),
+(1, 26, NULL);
 
 -- --------------------------------------------------------
 
@@ -131,6 +177,13 @@ INSERT INTO `users` (`id`, `username`, `email`, `password_hash`, `is_admin`, `cr
 --
 
 --
+-- Индексы таблицы `categories`
+--
+ALTER TABLE `categories`
+  ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `key_name` (`key_name`);
+
+--
 -- Индексы таблицы `ingredients`
 --
 ALTER TABLE `ingredients`
@@ -150,7 +203,9 @@ ALTER TABLE `ratings`
 --
 ALTER TABLE `recipes`
   ADD PRIMARY KEY (`id`),
-  ADD KEY `user_id` (`user_id`);
+  ADD KEY `idx_user_id` (`user_id`),
+  ADD KEY `idx_category` (`category`),
+  ADD KEY `idx_status` (`status`);
 
 --
 -- Индексы таблицы `recipe_ingredients`
@@ -171,10 +226,16 @@ ALTER TABLE `users`
 --
 
 --
+-- AUTO_INCREMENT для таблицы `categories`
+--
+ALTER TABLE `categories`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=6;
+
+--
 -- AUTO_INCREMENT для таблицы `ingredients`
 --
 ALTER TABLE `ingredients`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=24;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=27;
 
 --
 -- AUTO_INCREMENT для таблицы `ratings`
@@ -192,7 +253,7 @@ ALTER TABLE `recipes`
 -- AUTO_INCREMENT для таблицы `users`
 --
 ALTER TABLE `users`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
 
 --
 -- Ограничения внешнего ключа сохраненных таблиц
@@ -209,7 +270,7 @@ ALTER TABLE `ratings`
 -- Ограничения внешнего ключа таблицы `recipes`
 --
 ALTER TABLE `recipes`
-  ADD CONSTRAINT `recipes_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`);
+  ADD CONSTRAINT `fk_recipes_user_id` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE;
 
 --
 -- Ограничения внешнего ключа таблицы `recipe_ingredients`

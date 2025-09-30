@@ -1,39 +1,43 @@
 "use strict";
 (() => {
-  // --- Данные и константы ---
 
   const STORAGE_KEY_RECIPES = "recipesData";
   const STORAGE_KEY_USERS = "usersData";
   const STORAGE_KEY_SESSION = "sessionUser";
   const STORAGE_KEY_INGREDIENTS = "ingredientsData";
 
-  const categories = [
-    { key: "", label: "Все" },
-    { key: "мясо", label: "Мясо" },
-    { key: "рыба", label: "Рыба" },
-    { key: "веганское", label: "Веганское" },
-    { key: "десерты", label: "Десерты" },
-  ];
-
-  async function fetchIngredients() {
+async function fetchCategories() {
   try {
-    const response = await fetch('php/getIngredients.php');
+    const response = await fetch('php/getCategories.php');
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`HTTP ${response.status} (${response.statusText}): ${errorText}`);
+    }
     const data = await response.json();
-
-    if (data.success && Array.isArray(data.ingredients)) {
-      state.ingredients = data.ingredients;
+    if (data.success && Array.isArray(data.categories)) {
+      state.categories = data.categories;
+      renderCategories();
     } else {
-      console.error("Ошибка загрузки ингредиентов:", data.error);
-      // Можно оставить дефолтный список
-      state.ingredients = [...defaultIngredients];
+      console.error("Ошибка в данных категорий:", data.error || data);
     }
   } catch (err) {
-    console.error("Не удалось загрузить ингредиенты", err);
-    state.ingredients = [...defaultIngredients];
+    console.error("Не удалось загрузить категории", err);
   }
 }
 
-  // --- DOM элементы ---
+async function fetchIngredients() {
+  try {
+    const response = await fetch('php/getIngredients.php');
+    const data = await response.json();
+    if (data.success && Array.isArray(data.ingredients)) {
+      state.ingredients = data.ingredients;
+    } else {
+      console.error("Ошибка загрузки ингредиентов:", data.error || data);
+    }
+  } catch (err) {
+    console.error("Не удалось загрузить ингредиенты", err);
+  }
+}
 
   const categoryNav = document.getElementById("categoryNav");
   const ingredientsList = document.getElementById("ingredientsList");
@@ -74,7 +78,7 @@
     try {
       const response = await fetch('php/login.php', {
         method: 'POST',
-        credentials: 'include', // для отправки cookie сессии
+        credentials: 'include',
         headers: {
           'Content-Type': 'application/x-www-form-urlencoded'
         },
@@ -85,7 +89,6 @@
   
       if (data.success) {
         state.currentUser = data.user;
-        saveData();
         updateUserNav();
         updateAdminNav();
         alert('Вход выполнен успешно');
@@ -104,7 +107,7 @@
   const registerForm = document.getElementById('registerForm');
 
   registerForm.addEventListener('submit', async event => {
-    event.preventDefault(); // Отменяем стандартный submit + редирект
+    event.preventDefault();
   
     const formData = new FormData(registerForm);
   
@@ -119,16 +122,14 @@
       if (result.success) {
         alert(result.message);
   
-        // Передаем данные пользователя в глобальный JS (для примера)
         window._CURRENT_USER = {
           username: result.user.username,
           email: result.user.email,
           isAdmin: false,
-          avatarDataUrl: '' // если есть, иначе пусто
+          avatarDataUrl: ''
         };
   
-        // Скрываем модальное окно регистрации и показываем, что пользователь вошел
-        closeAuthModal(); // Напишите свою функцию для закрытия окна
+        closeAuthModal();
         updateUserUIAfterLogin(window._CURRENT_USER);
   
       } else {
@@ -143,8 +144,6 @@
   const registerUsername = document.querySelector('#registerForm input[name="username"]');
   const registerPassword = document.getElementById("registerPassword");
   const registerPasswordConfirm = document.getElementById("registerPasswordConfirm");
-
-  // --- Модальный просмотр рецепта ---
 
   const recipeViewModal = document.getElementById("recipeViewModal");
   const btnCloseRecipeView = document.getElementById("btnCloseRecipeView");
@@ -217,8 +216,6 @@
     }
   });
 
-  // --- Состояние приложения ---
-
   let state = {
     recipes: [],
     users: [],
@@ -241,75 +238,36 @@
     { key: "title", label: "По названию" }
   ];
 
-  // --- Утилиты ---
+function renderCategories() {
+  categoryNav.innerHTML = "";
 
-  function saveToStorage(key, data) {
-    localStorage.setItem(key, JSON.stringify(data));
+  if (!state.categories || !Array.isArray(state.categories)) {
+    console.warn("Categories not loaded yet, falling back to empty list.");
+    return;
   }
-
-  function loadFromStorage(key) {
-    try {
-      const data = localStorage.getItem(key);
-      if (!data) return null;
-      return JSON.parse(data);
-    } catch {
-      return null;
-    }
-  }
-
-  function saveData() {
-    saveToStorage(STORAGE_KEY_RECIPES, state.recipes);
-    saveToStorage(STORAGE_KEY_USERS, state.users);
-    saveToStorage(STORAGE_KEY_INGREDIENTS, state.ingredients);
-    // Уберите сохранение currentUser в localStorage, т.к. сервер — источник истины
-  }  
-
-  // --- Пользователи ---
-
-  function createUser(username, password, isAdmin = false) {
-    if (state.users.find(u => u.username === username)) return false;
-    state.users.push({ username, password, isAdmin, avatarDataUrl: "" });
-    saveData();
-    return true;
-  }
-
-  function checkLogin(username, password) {
-    return state.users.find(u => u.username === username && u.password === password) || null;
-  }
-
-  function initUsers() {
-    if (!state.users.find(u => u.isAdmin)) {
-      createUser("admin@bk.ru", "admin123", true);
-    }
-  }
-
-  // --- Рендер категорий ---
-
-  function renderCategories() {
-    categoryNav.innerHTML = "";
-    categories.forEach(({ key, label }) => {
-      const btn = document.createElement("button");
-      btn.type = "button";
-      btn.className = "category-btn" + (state.category === key ? " active" : "");
-      btn.textContent = label;
-      btn.addEventListener("click", () => {
-        if (state.category !== key) {
-          state.category = key;
-          updateCategoryActive();
-          filterAndRenderRecipes();
-        }
-      });
-      categoryNav.appendChild(btn);
+  
+  state.categories.forEach(({ key, label }) => {
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "category-btn" + (state.category === key ? " active" : "");
+    btn.textContent = label;
+    btn.addEventListener("click", () => {
+      if (state.category !== key) {
+        state.category = key;
+        updateCategoryActive();
+        filterAndRenderRecipes();
+      }
     });
-  }
+    categoryNav.appendChild(btn);
+  });
+}
 
   function updateCategoryActive() {
     [...categoryNav.children].forEach((btn, i) => {
-      btn.classList.toggle("active", categories[i].key === state.category);
+      btn.classList.toggle("active", state.categories[i].key === state.category);
     });
   }
 
-  // Функция для создания блока ingredientsFilter
   function createIngredientsFilter() {
     const ingredientsFilter = document.createElement("aside");
     ingredientsFilter.id = "ingredientsFilter";
@@ -322,22 +280,17 @@
     return ingredientsFilter;
   }
 
-  // Функция для рендеринга фильтра ингредиентов
   function renderIngredientsFilter() {
-    // Удаляем старый ingredientsFilter, если он существует
     const existingFilter = document.getElementById("ingredientsFilter");
     if (existingFilter) existingFilter.remove();
 
-    // Создаем новый ingredientsFilter
     const ingredientsFilter = createIngredientsFilter();
 
-    // Находим контейнер по id
     const container = document.getElementById("ingredientsColumn");
     container.appendChild(ingredientsFilter);
 
-    // Рендерим список ингредиентов
     const ingredientsList = document.getElementById("ingredientsList");
-    ingredientsList.innerHTML = ""; // Очищаем предыдущие элементы
+    ingredientsList.innerHTML = "";
 
     state.ingredients.forEach(ingredient => {
       const li = document.createElement("li");
@@ -381,7 +334,6 @@
         }
       });
 
-      // Кнопка удаления ингредиента только для админов
       if (state.currentUser  && state.currentUser .isAdmin) {
         const btnDelete = document.createElement("button");
         btnDelete.type = "button";
@@ -390,7 +342,7 @@
         btnDelete.setAttribute("aria-label", `Удалить ингредиент ${ingredient}`);
         btnDelete.textContent = "×";
         btnDelete.addEventListener("click", (event) => {
-          event.stopPropagation(); // предотвращаем всплытие клика
+          event.stopPropagation();
           if (confirm(`Удалить ингредиент "${ingredient}"? Это удалит его из всех рецептов.`)) {
             removeIngredient(ingredient);
           }
@@ -412,7 +364,6 @@
         const data = await response.json();
         if (data.success) {
           alert(data.message);
-          // Обновим список ингредиентов с сервера:
           await fetchIngredients();
           renderIngredientsFilter();
           filterAndRenderRecipes();
@@ -425,7 +376,6 @@
       }
     }
 
-    // Если пользователь админ — создаём поле ввода и кнопку
     if (state.currentUser  && state.currentUser .isAdmin) {
       const newIngredientInput = document.createElement("input");
       newIngredientInput.type = "text";
@@ -455,12 +405,11 @@
             method: 'POST',
             headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
             body: new URLSearchParams({ action: 'add', name: val }),
-            credentials: 'include' // если надо куки для авторизации
+            credentials: 'include'
           });
           const data = await response.json();
           if (data.success) {
             alert(data.message);
-            // Обновим список ингредиентов с сервера:
             await fetchIngredients();
             renderIngredientsFilter();
           } else {
@@ -476,7 +425,6 @@
     }
   }
 
-  // Вызов функции рендеринга ингредиентов
   renderIngredientsFilter();
 
   function toggleIngredient(ingredient) {
@@ -499,12 +447,9 @@
     state.recipes.forEach(r => {
       r.ingredients = r.ingredients.filter(i => i !== ingredient);
     });
-    saveData();
     renderIngredientsFilter();
     filterAndRenderRecipes();
   }
-
-  // --- Рендер кнопок сортировки ---
 
   function renderSortButtons() {
     sortNav.innerHTML = "";
@@ -528,8 +473,6 @@
       sortNav.appendChild(btn);
     });
   }
-
-  // --- Фильтрация и сортировка рецептов ---
 
   function filterAndRenderRecipes() {
     let filtered = state.recipes.filter(r => r.status === "approved");
@@ -568,7 +511,6 @@
       } else if (state.sortBy === "popularity") {
         filtered.sort((a, b) => b.ratings.length - a.ratings.length);
       } else if (state.sortBy === "relevance") {
-        // Нет реализации релевантности
       }
     }
 
@@ -579,8 +521,6 @@
     if (!ratings || ratings.length === 0) return 0;
     return ratings.reduce((a, b) => a + b, 0) / ratings.length;
   }
-
-  // --- Рендер списка рецептов ---
 
   function renderRecipes(recipes) {
     let existingH2 = recipesSection.querySelector("h2");
@@ -718,8 +658,6 @@
     });
   }
 
-  // --- Оценка рецепта ---
-
   function rateRecipe(recipeId, rating) {
     const recipe = state.recipes.find(r => r.id === recipeId);
     if (!recipe) return;
@@ -728,7 +666,6 @@
 
     recipe.ratings = Object.values(recipe.userRatings);
 
-    saveData();
     filterAndRenderRecipes();
   }
 
@@ -738,13 +675,9 @@
 
     state.recipes.splice(index, 1);
 
-    saveData();
-
     renderMyRecipes();
     filterAndRenderRecipes();
   }
-
-  // --- Форма добавления/редактирования рецепта ---
 
   function clearIngredientsInputs() {
     ingredientsContainer.innerHTML = "";
@@ -757,6 +690,7 @@
 
     const input = document.createElement("input");
     input.type = "text";
+    input.name = "ingredients[]";
     input.placeholder = "Ингредиент";
     input.value = value;
     input.required = true;
@@ -801,6 +735,7 @@
     div.className = "step-row";
 
     const textarea = document.createElement("textarea");
+    textarea.name = "steps[]";    
     textarea.placeholder = "Опишите шаг приготовления";
     textarea.value = value;
     textarea.required = true;
@@ -834,8 +769,6 @@
     }
   }
 
-  // --- Открытие/закрытие модалки рецепта (редактирование/добавление) ---
-
   function openRecipeModal(editingRecipe = null) {
     modalOverlay.hidden = false;
     modalOverlay.scrollTop = 0;
@@ -847,7 +780,7 @@
     imagePreview.style.display = "none";
     imagePreview.src = "";
 
-    inputImageFile.value = ""; // Сброс поля выбора файла
+    inputImageFile.value = "";
 
     if (editingRecipe) {
       state.editingRecipeId = editingRecipe.id;
@@ -888,153 +821,181 @@
     imagePreview.src = "";
   }
 
-  // --- Валидация и отправка формы рецепта ---
+recipeForm.addEventListener("submit", async (e) => {
+  e.preventDefault();
 
-  recipeForm.addEventListener("submit", e => {
-    e.preventDefault();
+  if (!state.currentUser) {
+    alert("Для добавления рецепта необходимо войти в систему.");
+    closeRecipeModal();
+    openAuthModal("login");
+    return;
+  }
 
-    if (!state.currentUser) {
-      alert("Для добавления рецепта необходимо войти в систему.");
-      closeRecipeModal();
-      openAuthModal("login");
+  const title = inputTitle.value.trim();
+  const cookTime = Number(inputCookTime.value);
+  const category = inputCategory.value;
+
+  const ingredientInputs = ingredientsContainer.querySelectorAll("input");
+  const ingredients = Array.from(ingredientInputs).map(i => i.value.trim().toLowerCase()).filter(Boolean);
+
+  const stepTextareas = stepsContainer.querySelectorAll("textarea");
+  const steps = Array.from(stepTextareas).map(t => t.value.trim()).filter(Boolean);
+
+  if (!title) {
+    alert("Пожалуйста, введите название рецепта");
+    return;
+  }
+  if (!cookTime || isNaN(cookTime) || cookTime <= 0) {
+    alert("Пожалуйста, введите корректное время приготовления (в минутах)");
+    return;
+  }
+  if (!category) {
+    alert("Пожалуйста, выберите категорию");
+    return;
+  }
+  if (ingredients.length === 0) {
+    alert("Пожалуйста, добавьте хотя бы один ингредиент");
+    return;
+  }
+  if (steps.length === 0) {
+    alert("Пожалуйста, добавьте хотя бы один шаг приготовления");
+    return;
+  }
+
+  const isEditing = !!state.editingRecipeId;
+
+  if (!inputImageFile.files || inputImageFile.files.length === 0) {
+    if (!isEditing) {
+      alert("Пожалуйста, загрузите фото рецепта");
       return;
     }
+  }
 
-    const title = inputTitle.value.trim();
-    const cookTime = Number(inputCookTime.value);
-    const category = inputCategory.value;
-
-    const ingredientInputs = ingredientsContainer.querySelectorAll("input");
-    const ingredients = Array.from(ingredientInputs).map(i => i.value.trim().toLowerCase()).filter(Boolean);
-
-    const stepTextareas = stepsContainer.querySelectorAll("textarea");
-    const steps = Array.from(stepTextareas).map(t => t.value.trim()).filter(Boolean);
-
-    if (!title) {
-      alert("Пожалуйста, введите название рецепта");
-      return;
-    }
-    if (!cookTime || isNaN(cookTime) || cookTime <= 0) {
-      alert("Пожалуйста, введите корректное время приготовления (в минутах)");
-      return;
-    }
-    if (!category) {
-      alert("Пожалуйста, выберите категорию");
-      return;
-    }
-    if (ingredients.length === 0) {
-      alert("Пожалуйста, добавьте хотя бы один ингредиент");
-      return;
-    }
-    if (steps.length === 0) {
-      alert("Пожалуйста, добавьте хотя бы один шаг приготовления");
-      return;
-    }
-
-    const isEditing = !!state.editingRecipeId;
-
-    if (!inputImageFile.files || inputImageFile.files.length === 0) {
-      if (!isEditing) {
-        alert("Пожалуйста, загрузите фото рецепта");
-        return;
-      }
-    }
-
-    function readImageFile(file) {
-      return new Promise((resolve, reject) => {
-        const img = new Image();
-        const objectUrl = URL.createObjectURL(file);
-        img.onload = () => {
-          if (img.width < 600 || img.height < 400) {
-            alert("Изображение слишком маленькое. Минимальный размер: 600x400 пикселей.");
-            inputImageFile.value = "";
-            imagePreview.style.display = "none";
-            imagePreview.src = "";
-            URL.revokeObjectURL(objectUrl);
-            reject(new Error("Image too small"));
-            return;
-          }
-          URL.revokeObjectURL(objectUrl);
-
-          const reader = new FileReader();
-          reader.onload = e => resolve(e.target.result);
-          reader.onerror = e => reject(e);
-          reader.readAsDataURL(file);
-        };
-        img.onerror = () => {
-          alert("Не удалось загрузить изображение для проверки размера");
+  async function validateImageFile(file) {
+    return new Promise((resolve, reject) => {
+      const img = new Image();
+      const objectUrl = URL.createObjectURL(file);
+      img.onload = () => {
+        if (img.width < 600 || img.height < 400) {
+          alert("Изображение слишком маленькое. Минимальный размер: 600x400 пикселей.");
           inputImageFile.value = "";
           imagePreview.style.display = "none";
           imagePreview.src = "";
           URL.revokeObjectURL(objectUrl);
-          reject(new Error("Image load error"));
-        };
-        img.src = objectUrl;
-      });
+          reject(new Error("Image too small"));
+          return;
+        }
+        URL.revokeObjectURL(objectUrl);
+        resolve(file);
+      };
+      img.onerror = () => {
+        alert("Не удалось загрузить изображение для проверки размера");
+        inputImageFile.value = "";
+        imagePreview.style.display = "none";
+        imagePreview.src = "";
+        URL.revokeObjectURL(objectUrl);
+        reject(new Error("Image load error"));
+      };
+      img.src = objectUrl;
+    });
+  }
+
+  if (isEditing) {
+    if (!state.currentUser.isAdmin) {
+      alert("Редактировать рецепт может только администратор");
+      return;
+    }
+    const recipe = state.recipes.find(r => r.id === state.editingRecipeId);
+    if (!recipe) {
+      alert("Рецепт не найден");
+      closeRecipeModal();
+      return;
     }
 
-    async function processSubmit() {
-      let imageUrl = "";
-      if (inputImageFile.files && inputImageFile.files.length > 0) {
-        try {
-          imageUrl = await readImageFile(inputImageFile.files[0]);
-        } catch {
-          return;
-        }
-      } else if (isEditing) {
-        const oldRecipe = state.recipes.find(r => r.id === state.editingRecipeId);
-        if (oldRecipe) imageUrl = oldRecipe.imageUrl || "";
-      }
+    let imageUrl = recipe.imageUrl || "";
 
-      if (isEditing) {
-        if (!state.currentUser.isAdmin) {
-          alert("Редактировать рецепт может только администратор");
+    if (inputImageFile.files && inputImageFile.files.length > 0) {
+      try {
+        const file = await validateImageFile(inputImageFile.files[0]);
+        const reader = new FileReader();
+        reader.onload = e => {
+          imageUrl = e.target.result;
+          updateRecipe(imageUrl);
+        };
+        reader.onerror = () => {
+          alert("Ошибка чтения изображения");
           return;
-        }
-        const recipe = state.recipes.find(r => r.id === state.editingRecipeId);
-        if (!recipe) {
-          alert("Рецепт не найден");
-          closeRecipeModal();
-          return;
-        }
-        recipe.title = title;
-        recipe.cookTime = cookTime;
-        recipe.category = category;
-        recipe.ingredients = ingredients;
-        recipe.steps = steps;
-        recipe.imageUrl = imageUrl;
-        recipe.status = "approved";
-        saveData();
-        closeRecipeModal();
-        filterAndRenderRecipes();
-        alert("Рецепт успешно обновлён");
+        };
+        reader.readAsDataURL(file);
+      } catch (err) {
         return;
       }
-
-      const newRecipe = {
-        id: Date.now().toString(),
-        title,
-        cookTime,
-        category,
-        ingredients,
-        steps,
-        imageUrl,
-        status: "pending",
-        author: state.currentUser.username,
-        ratings: [],
-        userRatings: {},
-      };
-
-      state.recipes.push(newRecipe);
-      saveData();
-      closeRecipeModal();
-      alert("Рецепт отправлен на модерацию");
+    } else {
+      updateRecipe(imageUrl);
     }
 
-    processSubmit();
-  });
+    function updateRecipe(imageUrl) {
+      recipe.title = title;
+      recipe.cookTime = cookTime;
+      recipe.category = category;
+      recipe.ingredients = ingredients;
+      recipe.steps = steps;
+      recipe.imageUrl = imageUrl;
+      recipe.status = "approved";
+      closeRecipeModal();
+      filterAndRenderRecipes();
+      alert("Рецепт успешно обновлён");
+    }
 
-  // --- Превью изображения ---
+    return;
+  }
+
+  try {
+    let imageFile = null;
+    if (inputImageFile.files && inputImageFile.files.length > 0) {
+      imageFile = await validateImageFile(inputImageFile.files[0]);
+    }
+
+    const formData = new FormData();
+    formData.append('title', title);
+    formData.append('cook_time', cookTime);
+    formData.append('category', category);
+    formData.append('author', state.currentUser.username);
+    formData.append('action', 'add_recipe');
+
+    const rawIngredients = Array.from(ingredientInputs).map(i => i.value.trim()).filter(Boolean);
+    rawIngredients.forEach(ing => formData.append('ingredients[]', ing));
+
+    steps.forEach(step => formData.append('steps[]', step));
+
+    if (imageFile) {
+      formData.append('imageFile', imageFile);
+    }
+
+    const response = await fetch('php/upload_recipe.php', {
+      method: 'POST',
+      body: formData,
+      credentials: 'include'
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+    }
+
+    const data = await response.json();
+
+    if (data.success) {
+      alert(data.message || "Рецепт отправлен на модерацию");
+      closeRecipeModal();
+      location.reload();
+    } else {
+      alert(data.error || 'Ошибка при отправке рецепта');
+    }
+  } catch (error) {
+    console.error('Ошибка отправки:', error);
+    alert('Ошибка сети или сервера. Попробуйте позже: ' + error.message);
+  }
+});
 
   inputImageFile.addEventListener("change", () => {
     const file = inputImageFile.files[0];
@@ -1082,15 +1043,11 @@
   btnAddIngredient.addEventListener("click", () => addIngredientInput());
   btnAddStep.addEventListener("click", () => addStepInput());
 
-  // --- Обработка клика по кнопке в шапке ---
-
   btnCloseModal.addEventListener("click", closeRecipeModal);
 
   modalOverlay.addEventListener("click", e => {
     if (e.target === modalOverlay) closeRecipeModal();
   });
-
-  // --- Авторизация ---
 
   function openAuthModal(tab = "login") {
     authModal.hidden = false;
@@ -1139,8 +1096,6 @@
     }
   }
 
-  // --- Обновление навигации пользователя и кнопки аватара ---
-
   const avatarBtn = document.createElement("button");
   avatarBtn.className = "user-avatar-btn no-avatar";
   avatarBtn.setAttribute("aria-haspopup", "true");
@@ -1155,7 +1110,7 @@
 const menuItems = [
   { id: "profile", label: "Личный кабинет" },
   { id: "myRecipes", label: "Мои рецепты" },
-  { id: "addRecipe", label: "Добавить рецепт/Модерация" }, // новая кнопка
+  { id: "addRecipe", label: "Добавить рецепт/Модерация" },
   { id: "logout", label: "Выйти" },
 ];
 
@@ -1254,84 +1209,8 @@ menuItems.forEach(({ id, label }) => {
   const myRecipesSection = document.getElementById("myRecipesSection");
   const myRecipesList = document.getElementById("myRecipesList");
 
-  // function hideAllMainSections() {
-  //   profileSection.hidden = true;
-  //   myRecipesSection.hidden = true;
-  //   main.style.display = "none";
-  //   categoryNav.style.display = "none";
-  //   if (sortContainer) sortContainer.style.display = "none";
-  // }
-
-  // function showMainContent() {
-  //   profileSection.hidden = true;
-  //   myRecipesSection.hidden = true;
-  //   main.style.display = "flex";
-  //   categoryNav.style.display = "flex";
-  //   if (sortContainer) sortContainer.style.display = "";
-  // }
-
-  // function openProfileSection() {
-  //   if (!state.currentUser) return;
-  //   // hideAllMainSections();
-  //   profileUsernameSection.value = state.currentUser.username || "";
-  //   if (state.currentUser.avatarDataUrl) {
-  //     profileAvatarPreviewSection.src = state.currentUser.avatarDataUrl;
-  //     profileAvatarPreviewSection.style.display = "block";
-  //   } else {
-  //     profileAvatarPreviewSection.style.display = "none";
-  //     profileAvatarPreviewSection.src = "";
-  //   }
-  //   profileAvatarInputSection.value = "";
-  //   profileSection.hidden = false;
-  // }
-
-  // profileAvatarInputSection.addEventListener("change", () => {
-  //   const file = profileAvatarInputSection.files[0];
-  //   if (!file) {
-  //     profileAvatarPreviewSection.style.display = "none";
-  //     profileAvatarPreviewSection.src = "";
-  //     return;
-  //   }
-  //   if (!file.type.startsWith("image/")) {
-  //     alert("Пожалуйста, выберите файл изображения");
-  //     profileAvatarInputSection.value = "";
-  //     profileAvatarPreviewSection.style.display = "none";
-  //     profileAvatarPreviewSection.src = "";
-  //     return;
-  //   }
-  //   const reader = new FileReader();
-  //   reader.onload = e => {
-  //     profileAvatarPreviewSection.src = e.target.result;
-  //     profileAvatarPreviewSection.style.display = "block";
-  //   };
-  //   reader.readAsDataURL(file);
-  // });
-
-  // profileFormSection.addEventListener("submit", e => {
-  //   e.preventDefault();
-  //   if (!state.currentUser) return;
-
-  //   if (profileAvatarInputSection.files.length > 0) {
-  //     const file = profileAvatarInputSection.files[0];
-  //     const reader = new FileReader();
-  //     reader.onload = event => {
-  //       state.currentUser.avatarDataUrl = event.target.result;
-  //       saveData();
-  //       updateAvatarBtn(state.currentUser);
-  //       alert("Аватар обновлен");
-  //       profileSection.hidden = true;
-  //       // showMainContent();
-  //     };
-  //     reader.readAsDataURL(file);
-  //   } else {
-  //     profileSection.hidden = true;
-  //     // showMainContent();
-  //   }
-  // });
-
   function openMyRecipesSection() {
     if (!state.currentUser) return;
-    // hideAllMainSections();
     renderMyRecipes();
     myRecipesSection.hidden = false;
   }
@@ -1401,13 +1280,11 @@ menuItems.forEach(({ id, label }) => {
     });
   }
 
-  // --- Выход из аккаунта ---
-
   async function logoutUser() {
     try {
       const response = await fetch('php/logout.php', {
         method: 'POST',
-        credentials: 'include', // важно для сессионных куков
+        credentials: 'include',
         headers: { 'Content-Type': 'application/json' }
       });
   
@@ -1415,14 +1292,11 @@ menuItems.forEach(({ id, label }) => {
   
       if (data.success) {
         state.currentUser = null;
-        saveData();
         updateAvatarBtn(null);
         updateUserNav();
         updateAdminNav();
         renderIngredientsFilter();
         filterAndRenderRecipes();
-        // hideAllMainSections();
-        // showMainContent();
   
         alert('Вы успешно вышли из аккаунта.');
       } else {
@@ -1433,8 +1307,6 @@ menuItems.forEach(({ id, label }) => {
       alert('Ошибка соединения. Попробуйте позже.');
     }
   }
-
-  // --- Обновление навигации пользователя ---
 
   function updateUserNav() {
     userNav.innerHTML = "";
@@ -1462,26 +1334,10 @@ menuItems.forEach(({ id, label }) => {
       btnAction.textContent = "Добавить рецепт";
     }
   }
-  
-  // --- Обработка клика по текст-ссылке "Рецепты вкусных блюд" ---
-
-  // homeLink.addEventListener("click", (e) => {
-  //   e.preventDefault();
-  //   profileSection.hidden = true;
-  //   myRecipesSection.hidden = true;
-  //   showMainContent();
-
-  //   state.adminView = null;
-
-  //   homeLink.blur();
-  // });
-
-  // --- Инициализация ---
 
   function updateUserUIAfterLogin(user) {
     if (!user) return;
     state.currentUser = user;
-    saveData();
     updateUserNav();
     updateAdminNav();
     closeAuthModal();
@@ -1489,23 +1345,18 @@ menuItems.forEach(({ id, label }) => {
   }
 
 function init() {
-  // loadData();
-  initUsers();
 
-  //Получаем пользователя из PHP сессии (если есть)
   state.currentUser = window._CURRENT_USER || null;
 
   updateUserNav();
   updateAdminNav();
   renderCategories();
 
-  // Загрузим ингредиенты из сервера, потом отрендерим
   fetchIngredients().then(() => {
     renderIngredientsFilter();
-    // renderSortButtons();
     filterAndRenderRecipes();
   });
+  fetchCategories()
 }
-
   init();
 })();
