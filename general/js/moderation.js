@@ -656,77 +656,116 @@
 
   // --- Рендер списка рецептов на модерации ---
 
-  function renderModerationRecipes() {
+function renderModerationRecipes() {
     const moderationList = document.getElementById("moderationList");
     moderationList.innerHTML = ""; // Очищаем предыдущий список
 
-    // Фильтруем рецепты на модерации
-    const moderationRecipes = state.recipes.filter(r => r.status === "pending");
+    // Убрали фильтр: state.recipes уже фильтруется сервером (только 'pending')
+    const moderationRecipes = state.recipes;  // Используем напрямую
+    console.log("Pending recipes from server:", moderationRecipes);
 
     if (moderationRecipes.length === 0) {
-      // Если нет рецептов на модерации, выводим сообщение
-      const message = document.createElement("p");
-      message.textContent = "Нет рецептов на модерации.";
-      moderationList.appendChild(message);
+        // Если нет рецептов на модерации, выводим сообщение
+        const message = document.createElement("p");
+        message.textContent = "Нет рецептов на модерации.";
+        moderationList.appendChild(message);
     } else {
-      // Если есть рецепты на модерации, отображаем их
-      moderationRecipes.forEach(recipe => {
-        const card = document.createElement("article");
-        card.className = "recipe-card";
-        card.tabIndex = 0;
-        card.setAttribute("aria-label", `Рецепт ${recipe.title}`);
+        // Если есть рецепты на модерации, отображаем их
+        moderationRecipes.forEach(recipe => {
+            const card = document.createElement("article");
+            card.className = "recipe-card";
+            card.tabIndex = 0;
+            card.setAttribute("aria-label", `Рецепт ${recipe.title}`);
 
-        if (recipe.imageUrl) {
-          const img = document.createElement("img");
-          img.src = recipe.imageUrl;
-          img.alt = `Фото рецепта ${recipe.title}`;
-          img.style.width = "100%";
-          img.style.height = "180px";
-          img.style.objectFit = "cover";
-          img.style.borderBottom = "1px solid #ddd";
-          card.appendChild(img);
-        }
+            if (recipe.imageUrl) {
+                const img = document.createElement("img");
+                img.src = recipe.imageUrl;
+                img.alt = `Фото рецепта ${recipe.title}`;
+                img.style.width = "100%";
+                img.style.height = "180px";
+                img.style.objectFit = "cover";
+                img.style.borderBottom = "1px solid #ddd";
+                card.appendChild(img);
+            }
 
-        const infoDiv = document.createElement("div");
-        infoDiv.className = "recipe-info";
+            const infoDiv = document.createElement("div");
+            infoDiv.className = "recipe-info";
 
-        const h3 = document.createElement("h3");
-        h3.className = "recipe-name";
-        h3.textContent = recipe.title;
-        infoDiv.appendChild(h3);
+            const h3 = document.createElement("h3");
+            h3.className = "recipe-name";
+            h3.textContent = recipe.title;
+            infoDiv.appendChild(h3);
 
-        const pCookTime = document.createElement("p");
-        pCookTime.innerHTML = `<b>Время готовки:</b> ${recipe.cookTime} мин`;
-        infoDiv.appendChild(pCookTime);
+            const pCookTime = document.createElement("p");
+            pCookTime.innerHTML = `<b>Время готовки:</b> ${recipe.cookTime} мин`;
+            infoDiv.appendChild(pCookTime);
 
-        const pCategory = document.createElement("p");
-        pCategory.innerHTML = `<b>Категория:</b> ${recipe.category || "—"}`;
-        infoDiv.appendChild(pCategory);
+            const pCategory = document.createElement("p");
+            pCategory.innerHTML = `<b>Категория:</b> ${recipe.category || "—"}`;
+            infoDiv.appendChild(pCategory);
 
-        // Добавьте кнопку для одобрения или отклонения рецепта
-        const actions = document.createElement("div");
-        actions.className = "recipe-actions";
+            // Действия админа
+            const actions = document.createElement("div");
+            actions.className = "recipe-actions";
 
-        const btnApprove = document.createElement("button");
-        btnApprove.textContent = "Одобрить";
-        btnApprove.addEventListener("click", () => {
-          approveRecipe(recipe.id);
+            const btnApprove = document.createElement("button");
+            btnApprove.textContent = "Одобрить";
+            btnApprove.addEventListener("click", () => handleApprove(recipe.id)); // Изменено на новую функцию
+            actions.appendChild(btnApprove);
+
+            const btnReject = document.createElement("button");
+            btnReject.textContent = "Отклонить";
+            btnReject.addEventListener("click", () => handleReject(recipe.id)); // Изменено на новую функцию
+            actions.appendChild(btnReject);
+
+            infoDiv.appendChild(actions);
+            card.appendChild(infoDiv);
+            moderationList.appendChild(card);
         });
-        actions.appendChild(btnApprove);
-
-        const btnReject = document.createElement("button");
-        btnReject.textContent = "Отклонить";
-        btnReject.addEventListener("click", () => {
-          rejectRecipe(recipe.id);
-        });
-        actions.appendChild(btnReject);
-
-        infoDiv.appendChild(actions);
-        card.appendChild(infoDiv);
-        moderationList.appendChild(card);
-      });
     }
-  }
+}
+
+// Новые функции: обращаются к серверу, заменяют approveRecipe/rejectRecipe
+async function handleApprove(id) {
+    try {
+        const response = await fetch('php/manageRecipe.php', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ action: 'approve', id })
+        });
+        const data = await response.json();
+        if (data.success) {
+            alert(data.message); // Или toast/notification
+            fetchPendingRecipes();  // Перезагружаем список (удаляем одобренный из списка)
+        } else {
+            alert('Ошибка одобрения: ' + data.error);
+        }
+    } catch (err) {
+        console.error('Ошибка одобрения:', err);
+        alert('Ошибка сети');
+    }
+}
+
+async function handleReject(id) {
+    if (!confirm('Удалить рецепт навсегда? Эта операция необратима.')) return; // Подтверждение
+    try {
+        const response = await fetch('php/manageRecipe.php', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ action: 'reject', id })
+        });
+        const data = await response.json();
+        if (data.success) {
+            alert(data.message); // Или toast/notification
+            fetchPendingRecipes();  // Перезагружаем список (удаляем отклонённый)
+        } else {
+            alert('Ошибка отклонения: ' + data.error);
+        }
+    } catch (err) {
+        console.error('Ошибка отклонения:', err);
+        alert('Ошибка сети');
+    }
+}
 
   function approveRecipe(recipeId) {
     const recipe = state.recipes.find(r => r.id === recipeId);
@@ -1129,17 +1168,17 @@
 
   // --- Авторизация ---
 
-  function openAuthModal(tab = "login") {
-    authModal.hidden = false;
-    if (tab === "login") showLoginTab();
-    else showRegisterTab();
-  }
+  // function openAuthModal(tab = "login") {
+  //   authModal.hidden = false;
+  //   if (tab === "login") showLoginTab();
+  //   else showRegisterTab();
+  // }
 
-  function closeAuthModal() {
-    authModal.hidden = true;
-    loginForm.reset();
-    registerForm.reset();
-  }
+  // function closeAuthModal() {
+  //   authModal.hidden = true;
+  //   loginForm.reset();
+  //   registerForm.reset();
+  // }
 
   // btnCloseAuthModal.addEventListener("click", closeAuthModal);
 
@@ -1150,25 +1189,25 @@
   // tabLogin.addEventListener("click", showLoginTab);
   // tabRegister.addEventListener("click", showRegisterTab);
 
-  function showLoginTab() {
-    tabLogin.classList.add("active");
-    tabLogin.setAttribute("aria-selected", "true");
-    tabRegister.classList.remove("active");
-    tabRegister.setAttribute("aria-selected", "false");
-    loginForm.hidden = false;
-    registerForm.hidden = true;
-    loginUsername.focus();
-  }
+  // function showLoginTab() {
+  //   tabLogin.classList.add("active");
+  //   tabLogin.setAttribute("aria-selected", "true");
+  //   tabRegister.classList.remove("active");
+  //   tabRegister.setAttribute("aria-selected", "false");
+  //   loginForm.hidden = false;
+  //   registerForm.hidden = true;
+  //   loginUsername.focus();
+  // }
 
-  function showRegisterTab() {
-    tabRegister.classList.add("active");
-    tabRegister.setAttribute("aria-selected", "true");
-    tabLogin.classList.remove("active");
-    tabLogin.setAttribute("aria-selected", "false");
-    registerForm.hidden = false;
-    loginForm.hidden = true;
-    registerUsername.focus();
-  }
+  // function showRegisterTab() {
+  //   tabRegister.classList.add("active");
+  //   tabRegister.setAttribute("aria-selected", "true");
+  //   tabLogin.classList.remove("active");
+  //   tabLogin.setAttribute("aria-selected", "false");
+  //   registerForm.hidden = false;
+  //   loginForm.hidden = true;
+  //   registerUsername.focus();
+  // }
 
   // loginForm.addEventListener("submit", e => {
   //   e.preventDefault();
@@ -1290,10 +1329,10 @@
   }
 
   avatarBtn.addEventListener("click", () => {
-    if (!state.currentUser) {
-      openAuthModal("login");
-      return;
-    }
+    // if (!state.currentUser) {
+    //   openAuthModal("login");
+    //   return;
+    // }
     toggleUserMenu();
   });
 
@@ -1303,25 +1342,67 @@
     const id = e.target.id.replace("userMenu_", "");
     toggleUserMenu();
 
-    if (!state.currentUser && id !== "logout") {
-      openAuthModal("login");
-      return;
-    }
+    // if (!state.currentUser && id !== "logout") {
+    //   openAuthModal("login");
+    //   return;
+    // }
 
-    if (id === "profile") {
-      openProfileSection();
-    } else if (id === "myRecipes") {
-      openMyRecipesSection();
-    } else if (id === "logout") {
-      logoutUser();
-    } else if (id === "addRecipe") {
-      if (state.currentUser && state.currentUser.isAdmin) {
-        window.location.href = "moderation.html";
-      } else {
-        openRecipeModal();
-      }
-    }
+    if (id === "profile")
+			{
+				window.location.href = "profile.php";
+			}
+		else if (id === "myRecipes")
+			{
+				window.location.href = "MyRecipes.php";
+			}
+		else if (id === "addRecipe")
+			{
+				if (state.currentUser && state.currentUser.isAdmin){
+					window.location.href = "moderation.php";}
+					else {openRecipeModal();}}
+					else if (id === "logout")
+						{
+							logoutUser();
+						}
+
+    // if (id === "profile") {
+    //   window.location.href = "profile.php";
+    // } else if (id === "myRecipes") {
+    //   window.location.href = "MyRecipes.php";
+    // } else if (id === "logout") {
+    //   logoutUser();
+    // } else if (id === "addRecipe") {
+    //   if (state.currentUser && state.currentUser.isAdmin) {
+    //     window.location.href = "moderation.php";
+    //   } else {
+    //     openRecipeModal();
+    //   }
+    // }
   });
+
+	async function fetchPendingRecipes() {
+  try {
+		const response = await fetch('php/getPendingRecipes.php');
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`HTTP ${response.status} (${response.statusText}): ${errorText}`);
+    }
+    const data = await response.json();
+		console.log("Raw API response:", data);
+		console.log("Recipes array:", data.recipes);
+		console.log("Pending recipes count:", Array.isArray(data.recipes) ? data.recipes.filter(r => r.status === "pending").length : 0);
+
+    if (data.success && Array.isArray(data.recipes)) {
+      state.recipes = data.recipes;
+    } else {
+      console.error("Ошибка в данных рецептов:", data.error || data);
+      state.recipes = [];  // Если нет данных, пустой массив
+    }
+  } catch (err) {
+    console.error("Не удалось загрузить рецепты", err);
+    state.recipes = [];  // Пустой массив при ошибке
+  }
+}
 
   const profileSection = document.getElementById("profileSection");
   const profileFormSection = document.getElementById("profileFormSection");
@@ -1329,155 +1410,155 @@
   const profileAvatarInputSection = document.getElementById("profileAvatarInputSection");
   const profileAvatarPreviewSection = document.getElementById("profileAvatarPreviewSection");
 
-  const myRecipesSection = document.getElementById("myRecipesSection");
-  const myRecipesList = document.getElementById("myRecipesList");
+  // const myRecipesSection = document.getElementById("myRecipesSection");
+  // const myRecipesList = document.getElementById("myRecipesList");
 
-  function hideAllMainSections() {
-    profileSection.hidden = true;
-    myRecipesSection.hidden = true;
-    main.style.display = "none";
-    categoryNav.style.display = "none";
-    if (sortContainer) sortContainer.style.display = "none";
-  }
+  // function hideAllMainSections() {
+  //   profileSection.hidden = true;
+  //   myRecipesSection.hidden = true;
+  //   main.style.display = "none";
+  //   categoryNav.style.display = "none";
+  //   if (sortContainer) sortContainer.style.display = "none";
+  // }
 
-  function showMainContent() {
-    profileSection.hidden = true;
-    myRecipesSection.hidden = true;
-    main.style.display = "flex";
-    categoryNav.style.display = "flex";
-    if (sortContainer) sortContainer.style.display = "";
-  }
+  // function showMainContent() {
+  //   profileSection.hidden = true;
+  //   myRecipesSection.hidden = true;
+  //   main.style.display = "flex";
+  //   categoryNav.style.display = "flex";
+  //   if (sortContainer) sortContainer.style.display = "";
+  // }
 
-  function openProfileSection() {
-    if (!state.currentUser) return;
-    hideAllMainSections();
-    profileUsernameSection.value = state.currentUser.username || "";
-    if (state.currentUser.avatarDataUrl) {
-      profileAvatarPreviewSection.src = state.currentUser.avatarDataUrl;
-      profileAvatarPreviewSection.style.display = "block";
-    } else {
-      profileAvatarPreviewSection.style.display = "none";
-      profileAvatarPreviewSection.src = "";
-    }
-    profileAvatarInputSection.value = "";
-    profileSection.hidden = false;
-  }
+  // function openProfileSection() {
+  //   if (!state.currentUser) return;
+  //   hideAllMainSections();
+  //   profileUsernameSection.value = state.currentUser.username || "";
+  //   if (state.currentUser.avatarDataUrl) {
+  //     profileAvatarPreviewSection.src = state.currentUser.avatarDataUrl;
+  //     profileAvatarPreviewSection.style.display = "block";
+  //   } else {
+  //     profileAvatarPreviewSection.style.display = "none";
+  //     profileAvatarPreviewSection.src = "";
+  //   }
+  //   profileAvatarInputSection.value = "";
+  //   profileSection.hidden = false;
+  // }
 
-  profileAvatarInputSection.addEventListener("change", () => {
-    const file = profileAvatarInputSection.files[0];
-    if (!file) {
-      profileAvatarPreviewSection.style.display = "none";
-      profileAvatarPreviewSection.src = "";
-      return;
-    }
-    if (!file.type.startsWith("image/")) {
-      alert("Пожалуйста, выберите файл изображения");
-      profileAvatarInputSection.value = "";
-      profileAvatarPreviewSection.style.display = "none";
-      profileAvatarPreviewSection.src = "";
-      return;
-    }
-    const reader = new FileReader();
-    reader.onload = e => {
-      profileAvatarPreviewSection.src = e.target.result;
-      profileAvatarPreviewSection.style.display = "block";
-    };
-    reader.readAsDataURL(file);
-  });
+  // profileAvatarInputSection.addEventListener("change", () => {
+  //   const file = profileAvatarInputSection.files[0];
+  //   if (!file) {
+  //     profileAvatarPreviewSection.style.display = "none";
+  //     profileAvatarPreviewSection.src = "";
+  //     return;
+  //   }
+  //   if (!file.type.startsWith("image/")) {
+  //     alert("Пожалуйста, выберите файл изображения");
+  //     profileAvatarInputSection.value = "";
+  //     profileAvatarPreviewSection.style.display = "none";
+  //     profileAvatarPreviewSection.src = "";
+  //     return;
+  //   }
+  //   const reader = new FileReader();
+  //   reader.onload = e => {
+  //     profileAvatarPreviewSection.src = e.target.result;
+  //     profileAvatarPreviewSection.style.display = "block";
+  //   };
+  //   reader.readAsDataURL(file);
+  // });
 
-  profileFormSection.addEventListener("submit", e => {
-    e.preventDefault();
-    if (!state.currentUser) return;
+  // profileFormSection.addEventListener("submit", e => {
+  //   e.preventDefault();
+  //   if (!state.currentUser) return;
 
-    if (profileAvatarInputSection.files.length > 0) {
-      const file = profileAvatarInputSection.files[0];
-      const reader = new FileReader();
-      reader.onload = event => {
-        state.currentUser.avatarDataUrl = event.target.result;
-        saveData();
-        updateAvatarBtn(state.currentUser);
-        alert("Аватар обновлен");
-        profileSection.hidden = true;
-        showMainContent();
-      };
-      reader.readAsDataURL(file);
-    } else {
-      profileSection.hidden = true;
-      showMainContent();
-    }
-  });
+  //   if (profileAvatarInputSection.files.length > 0) {
+  //     const file = profileAvatarInputSection.files[0];
+  //     const reader = new FileReader();
+  //     reader.onload = event => {
+  //       state.currentUser.avatarDataUrl = event.target.result;
+  //       saveData();
+  //       updateAvatarBtn(state.currentUser);
+  //       alert("Аватар обновлен");
+  //       profileSection.hidden = true;
+  //       showMainContent();
+  //     };
+  //     reader.readAsDataURL(file);
+  //   } else {
+  //     profileSection.hidden = true;
+  //     showMainContent();
+  //   }
+  // });
 
-  function openMyRecipesSection() {
-    if (!state.currentUser) return;
-    hideAllMainSections();
-    renderMyRecipes();
-    myRecipesSection.hidden = false;
-  }
+  // function openMyRecipesSection() {
+  //   if (!state.currentUser) return;
+  //   hideAllMainSections();
+  //   renderMyRecipes();
+  //   myRecipesSection.hidden = false;
+  // }
 
-  function renderMyRecipes() {
-    myRecipesList.innerHTML = "";
-    if (!state.currentUser) return;
+  // function renderMyRecipes() {
+  //   myRecipesList.innerHTML = "";
+  //   if (!state.currentUser) return;
 
-    const userRecipes = state.recipes.filter(r => r.author === state.currentUser.username);
+  //   const userRecipes = state.recipes.filter(r => r.author === state.currentUser.username);
 
-    if (userRecipes.length === 0) {
-      myRecipesList.textContent = "У вас пока нет рецептов.";
-      return;
-    }
+  //   if (userRecipes.length === 0) {
+  //     myRecipesList.textContent = "У вас пока нет рецептов.";
+  //     return;
+  //   }
 
-    userRecipes.forEach(recipe => {
-      const card = document.createElement("article");
-      card.className = "recipe-card";
-      card.tabIndex = 0;
-      card.setAttribute("aria-label", `Рецепт ${recipe.title} (${recipe.status === "approved" ? "одобрен" : "не одобрен"})`);
+  //   userRecipes.forEach(recipe => {
+  //     const card = document.createElement("article");
+  //     card.className = "recipe-card";
+  //     card.tabIndex = 0;
+  //     card.setAttribute("aria-label", `Рецепт ${recipe.title} (${recipe.status === "approved" ? "одобрен" : "не одобрен"})`);
 
-      if (recipe.imageUrl) {
-        const img = document.createElement("img");
-        img.src = recipe.imageUrl;
-        img.alt = `Фото рецепта ${recipe.title}`;
-        card.appendChild(img);
-      }
+  //     if (recipe.imageUrl) {
+  //       const img = document.createElement("img");
+  //       img.src = recipe.imageUrl;
+  //       img.alt = `Фото рецепта ${recipe.title}`;
+  //       card.appendChild(img);
+  //     }
 
-      const infoDiv = document.createElement("div");
-      infoDiv.className = "recipe-info";
+  //     const infoDiv = document.createElement("div");
+  //     infoDiv.className = "recipe-info";
 
-      const h3 = document.createElement("h3");
-      h3.className = "recipe-name";
-      h3.textContent = recipe.title;
-      infoDiv.appendChild(h3);
+  //     const h3 = document.createElement("h3");
+  //     h3.className = "recipe-name";
+  //     h3.textContent = recipe.title;
+  //     infoDiv.appendChild(h3);
 
-      const metaDiv = document.createElement("div");
-      metaDiv.className = "recipe-meta";
+  //     const metaDiv = document.createElement("div");
+  //     metaDiv.className = "recipe-meta";
 
-      const pCookTime = document.createElement("p");
-      pCookTime.innerHTML = `<b>Время готовки:</b> ${recipe.cookTime} мин`;
-      metaDiv.appendChild(pCookTime);
+  //     const pCookTime = document.createElement("p");
+  //     pCookTime.innerHTML = `<b>Время готовки:</b> ${recipe.cookTime} мин`;
+  //     metaDiv.appendChild(pCookTime);
 
-      const pCategory = document.createElement("p");
-      pCategory.innerHTML = `<b>Категория:</b> ${recipe.category || "—"}`;
-      metaDiv.appendChild(pCategory);
+  //     const pCategory = document.createElement("p");
+  //     pCategory.innerHTML = `<b>Категория:</b> ${recipe.category || "—"}`;
+  //     metaDiv.appendChild(pCategory);
 
-      infoDiv.appendChild(metaDiv);
+  //     infoDiv.appendChild(metaDiv);
 
-      const statusDiv = document.createElement("div");
-      statusDiv.className = "recipe-status";
-      statusDiv.textContent = `Статус: ${recipe.status === "approved" ? "Одобрен" : (recipe.status === "pending" ? "На модерации" : "Отклонён")}`;
-      infoDiv.appendChild(statusDiv);
+  //     const statusDiv = document.createElement("div");
+  //     statusDiv.className = "recipe-status";
+  //     statusDiv.textContent = `Статус: ${recipe.status === "approved" ? "Одобрен" : (recipe.status === "pending" ? "На модерации" : "Отклонён")}`;
+  //     infoDiv.appendChild(statusDiv);
 
-      card.appendChild(infoDiv);
+  //     card.appendChild(infoDiv);
 
-      card.style.cursor = "pointer";
-      card.addEventListener("click", () => openRecipeViewModal(recipe));
-      card.addEventListener("keydown", e => {
-        if (e.key === "Enter" || e.key === " ") {
-          e.preventDefault();
-          openRecipeViewModal(recipe);
-        }
-      });
+  //     card.style.cursor = "pointer";
+  //     card.addEventListener("click", () => openRecipeViewModal(recipe));
+  //     card.addEventListener("keydown", e => {
+  //       if (e.key === "Enter" || e.key === " ") {
+  //         e.preventDefault();
+  //         openRecipeViewModal(recipe);
+  //       }
+  //     });
 
-      myRecipesList.appendChild(card);
-    });
-  }
+  //     myRecipesList.appendChild(card);
+  //   });
+  // }
 
   // --- Выход из аккаунта ---
 
@@ -1550,17 +1631,22 @@
 
   // --- Инициализация ---
 
-  function init() {
-    loadData();
-    initUsers();
-    updateUserNav();
-    updateAdminNav();
-    renderCategories();
-    renderIngredientsFilter();
-    renderSortButtons();
-    filterAndRenderRecipes();
-    renderModerationRecipes(); // Вызов функции для отображения рецептов на модерации
-  }
+	async function init() {
+  state.currentUser = window._CURRENT_USER || null;
+
+  // Загружаем данные асинхронно
+  // await fetchCategories();
+  // await fetchIngredients();
+  await fetchPendingRecipes()
+	renderModerationRecipes();
+
+  // Рендерим интерфейс после загрузки всех данных
+  updateUserNav();
+  updateAdminNav();
+  renderCategories();
+  renderIngredientsFilter();
+  filterAndRenderRecipes();  // Теперь рецепты загружены, так что фильтрация и рендеринг пройдут
+}
 
   init();
 })();

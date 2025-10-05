@@ -1,17 +1,16 @@
 <?php
-session_start();
+$host = 'localhost';
+$dbname = 'cookbook';
+$username_db = 'root'; // Чтобы не конфликтовать с переменной $username
+$password = '';
+
+session_start(); // Восстанавливаем сессию
+
 $isLoggedIn = isset($_SESSION['user_id']);
-$username = $_SESSION['username'] ?? null;
+$userUsername = $_SESSION['username'] ?? null;
 $isAdmin = $_SESSION['is_admin'] ?? false;
 $avatar = $_SESSION['avatarDataUrl'] ?? "";
 ?>
-<script>
-	window._CURRENT_USER = <?= json_encode($isLoggedIn ? [
-		'username' => $username,
-		'isAdmin' => (bool) $isAdmin,
-		'avatarDataUrl' => $avatar,
-	] : null) ?>;
-</script>
 
 <!DOCTYPE html>
 <html lang="ru">

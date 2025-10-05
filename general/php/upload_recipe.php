@@ -1,4 +1,7 @@
 <?php
+error_reporting(E_ALL);
+ini_set('display_errors', 1);
+
 session_start();
 error_reporting(E_ALL);
 ini_set('display_errors', 1);
@@ -87,7 +90,7 @@ if (!empty($_FILES['imageFile']['name'])) {
         mkdir($upload_dir, 0755, true);
     }
     $filename = uniqid('recipe_') . '_' . basename($_FILES['imageFile']['name']);
-    $image_path = 'uploads/' . $filename;
+    $image_path = 'php/uploads/' . $filename;
     $target_file = $upload_dir . $filename;
 
     if (!move_uploaded_file($_FILES['imageFile']['tmp_name'], $target_file)) {

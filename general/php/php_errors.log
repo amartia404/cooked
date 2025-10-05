@@ -1,0 +1,10 @@
+[05-Oct-2025 13:18:24 Europe/Berlin] PHP Fatal error:  Uncaught mysqli_sql_exception: Подключение не установлено, т.к. конечный компьютер отверг запрос на подключение in C:\xampp\htdocs\general\php\getCategories.php:17
+Stack trace:
+#0 C:\xampp\htdocs\general\php\getCategories.php(17): mysqli->__construct('localhost', 'root', Object(SensitiveParameterValue), 'cookbook')
+#1 {main}
+  thrown in C:\xampp\htdocs\general\php\getCategories.php on line 17
+[05-Oct-2025 13:18:33 Europe/Berlin] PHP Fatal error:  Uncaught mysqli_sql_exception: Подключение не установлено, т.к. конечный компьютер отверг запрос на подключение in C:\xampp\htdocs\general\php\getCategories.php:17
+Stack trace:
+#0 C:\xampp\htdocs\general\php\getCategories.php(17): mysqli->__construct('localhost', 'root', Object(SensitiveParameterValue), 'cookbook')
+#1 {main}
+  thrown in C:\xampp\htdocs\general\php\getCategories.php on line 17

@@ -39,9 +39,9 @@ async function fetchIngredients() {
   }
 }
 
-async function fetchRecipes() {
+async function fetchApprovedRecipes() {
   try {
-    const response = await fetch('php/getRecipes.php');
+    const response = await fetch('php/getApprovedRecipes.php');
     if (!response.ok) {
       const errorText = await response.text();
       throw new Error(`HTTP ${response.status} (${response.statusText}): ${errorText}`);
@@ -51,11 +51,11 @@ async function fetchRecipes() {
       state.recipes = data.recipes;
     } else {
       console.error("Ошибка в данных рецептов:", data.error || data);
-      state.recipes = [];  // Если нет данных, пустой массив
+      state.recipes = [];
     }
   } catch (err) {
     console.error("Не удалось загрузить рецепты", err);
-    state.recipes = [];  // Пустой массив при ошибке
+    state.recipes = [];
   }
 }
 
@@ -689,15 +689,31 @@ function renderCategories() {
     filterAndRenderRecipes();
   }
 
-  function deleteRecipe(recipeId) {
-    const index = state.recipes.findIndex(r => r.id === recipeId);
-    if (index === -1) return;
+function deleteRecipe(recipeId) {
+  if (!confirm(`Удалить рецепт?`)) return;
 
-    state.recipes.splice(index, 1);
-
-    renderMyRecipes();
-    filterAndRenderRecipes();
-  }
+  // Добавьте серверный вызов
+  fetch('php/delete_recipe.php', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: new URLSearchParams({ id: recipeId }),
+    credentials: 'include'
+  })
+  .then(response => response.json())
+  .then(data => {
+    if (data.success) {
+      alert(data.message);
+      fetchApprovedRecipes(); // Перезагружаем рецепты
+      filterAndRenderRecipes();
+    } else {
+      alert(data.error || 'Ошибка при удалении рецепта');
+    }
+  })
+  .catch(error => {
+    console.error('Ошибка удаления:', error);
+    alert('Ошибка сети или сервера: ' + error.message);
+  });
+}
 
   function clearIngredientsInputs() {
     ingredientsContainer.innerHTML = "";
@@ -925,46 +941,54 @@ recipeForm.addEventListener("submit", async (e) => {
       alert("Редактировать рецепт может только администратор");
       return;
     }
-    const recipe = state.recipes.find(r => r.id === state.editingRecipeId);
-    if (!recipe) {
-      alert("Рецепт не найден");
-      closeRecipeModal();
-      return;
-    }
 
-    let imageUrl = recipe.imageUrl || "";
-
+    let imageFile = null;
     if (inputImageFile.files && inputImageFile.files.length > 0) {
       try {
-        const file = await validateImageFile(inputImageFile.files[0]);
-        const reader = new FileReader();
-        reader.onload = e => {
-          imageUrl = e.target.result;
-          updateRecipe(imageUrl);
-        };
-        reader.onerror = () => {
-          alert("Ошибка чтения изображения");
-          return;
-        };
-        reader.readAsDataURL(file);
+        imageFile = await validateImageFile(inputImageFile.files[0]);
       } catch (err) {
         return;
       }
-    } else {
-      updateRecipe(imageUrl);
     }
 
-    function updateRecipe(imageUrl) {
-      recipe.title = title;
-      recipe.cookTime = cookTime;
-      recipe.category = category;
-      recipe.ingredients = ingredients;
-      recipe.steps = steps;
-      recipe.imageUrl = imageUrl;
-      recipe.status = "approved";
-      closeRecipeModal();
-      filterAndRenderRecipes();
-      alert("Рецепт успешно обновлён");
+    const formData = new FormData();
+    formData.append('id', state.editingRecipeId);
+    formData.append('title', title);
+    formData.append('cook_time', cookTime);
+    formData.append('category', category);
+
+    const rawIngredients = Array.from(ingredientInputs).map(i => i.value.trim()).filter(Boolean);
+    rawIngredients.forEach(ing => formData.append('ingredients[]', ing));
+    steps.forEach(step => formData.append('steps[]', step));
+
+    if (imageFile) {
+      formData.append('imageFile', imageFile);
+    }
+
+    try {
+      const response = await fetch('php/update_recipe.php', {
+        method: 'POST',
+        body: formData,
+        credentials: 'include'
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+
+      const data = await response.json();
+
+      if (data.success) {
+        alert(data.message || "Рецепт успешно обновлён");
+        closeRecipeModal();
+        await fetchApprovedRecipes(); // Перезагружаем рецепты с сервера
+        filterAndRenderRecipes();
+      } else {
+        alert(data.error || 'Ошибка при обновлении рецепта');
+      }
+    } catch (error) {
+      console.error('Ошибка обновления:', error);
+      alert('Ошибка сети или сервера: ' + error.message);
     }
 
     return;
@@ -1209,96 +1233,20 @@ menuItems.forEach(({ id, label }) => {
       window.location.href = "profile.php";
     } else if (id === "myRecipes") {
       window.location.href = "MyRecipes.php";
-    } else if (id === "logout") {
-      logoutUser();
     } else if (id === "addRecipe") {
       if (state.currentUser && state.currentUser.isAdmin) {
         window.location.href = "moderation.php";
-      } else {
-        openRecipeModal();
+      } else {openRecipeModal();}}
+      else if (id === "logout") {
+        logoutUser();
       }
-    }
-  });
+    });
 
   const profileSection = document.getElementById("profileSection");
   const profileFormSection = document.getElementById("profileFormSection");
   const profileUsernameSection = document.getElementById("profileUsernameSection");
   const profileAvatarInputSection = document.getElementById("profileAvatarInputSection");
   const profileAvatarPreviewSection = document.getElementById("profileAvatarPreviewSection");
-
-  const myRecipesSection = document.getElementById("myRecipesSection");
-  const myRecipesList = document.getElementById("myRecipesList");
-
-  function openMyRecipesSection() {
-    if (!state.currentUser) return;
-    renderMyRecipes();
-    myRecipesSection.hidden = false;
-  }
-
-  function renderMyRecipes() {
-    myRecipesList.innerHTML = "";
-    if (!state.currentUser) return;
-
-    const userRecipes = state.recipes.filter(r => r.author === state.currentUser.username);
-
-    if (userRecipes.length === 0) {
-      myRecipesList.textContent = "У вас пока нет рецептов.";
-      return;
-    }
-
-    userRecipes.forEach(recipe => {
-      const card = document.createElement("article");
-      card.className = "recipe-card";
-      card.tabIndex = 0;
-      card.setAttribute("aria-label", `Рецепт ${recipe.title} (${recipe.status === "approved" ? "одобрен" : "не одобрен"})`);
-
-      if (recipe.imageUrl) {
-        const img = document.createElement("img");
-        img.src = recipe.imageUrl;
-        img.alt = `Фото рецепта ${recipe.title}`;
-        card.appendChild(img);
-      }
-
-      const infoDiv = document.createElement("div");
-      infoDiv.className = "recipe-info";
-
-      const h3 = document.createElement("h3");
-      h3.className = "recipe-name";
-      h3.textContent = recipe.title;
-      infoDiv.appendChild(h3);
-
-      const metaDiv = document.createElement("div");
-      metaDiv.className = "recipe-meta";
-
-      const pCookTime = document.createElement("p");
-      pCookTime.innerHTML = `<b>Время готовки:</b> ${recipe.cookTime} мин`;
-      metaDiv.appendChild(pCookTime);
-
-      const pCategory = document.createElement("p");
-      pCategory.innerHTML = `<b>Категория:</b> ${recipe.category || "—"}`;
-      metaDiv.appendChild(pCategory);
-
-      infoDiv.appendChild(metaDiv);
-
-      const statusDiv = document.createElement("div");
-      statusDiv.className = "recipe-status";
-      statusDiv.textContent = `Статус: ${recipe.status === "approved" ? "Одобрен" : (recipe.status === "pending" ? "На модерации" : "Отклонён")}`;
-      infoDiv.appendChild(statusDiv);
-
-      card.appendChild(infoDiv);
-
-      card.style.cursor = "pointer";
-      card.addEventListener("click", () => openRecipeViewModal(recipe));
-      card.addEventListener("keydown", e => {
-        if (e.key === "Enter" || e.key === " ") {
-          e.preventDefault();
-          openRecipeViewModal(recipe);
-        }
-      });
-
-      myRecipesList.appendChild(card);
-    });
-  }
 
   async function logoutUser() {
     try {
@@ -1367,17 +1315,15 @@ menuItems.forEach(({ id, label }) => {
 async function init() {
   state.currentUser = window._CURRENT_USER || null;
 
-  // Загружаем данные асинхронно
   await fetchCategories();
   await fetchIngredients();
-  await fetchRecipes();  // Добавлено: загружаем рецепты
+  await fetchApprovedRecipes()
 
-  // Рендерим интерфейс после загрузки всех данных
   updateUserNav();
   updateAdminNav();
   renderCategories();
   renderIngredientsFilter();
-  filterAndRenderRecipes();  // Теперь рецепты загружены, так что фильтрация и рендеринг пройдут
+  filterAndRenderRecipes();
 }
 
   init();
