@@ -1,0 +1,241 @@
+@charset "UTF-8";
+
+/* Глобальные стили */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+  background-image: url(../img/1679657594_bogatyr-club-p-fon-shkolnii-serii-krasivo-36.jpg);
+  color: #333;
+}
+
+.container {
+  max-width: 1320px;
+  margin: 0 auto;
+  display: flex;
+}
+
+/* Стили для header (заимствованы из вашего CSS) */
+header {
+  background: #222222;
+  color: white;
+  padding: 15px 0;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  margin-bottom: 60px;
+}
+
+.logo {
+  height: 40px;
+}
+
+.userNav {
+  margin-left: 30px;
+  position: relative;
+  display: flex;
+}
+
+.site-title {
+  margin: 0;
+  font-size: 28px;
+  flex-grow: 1;
+  font-weight: 700;
+}
+
+.site-title a {
+  color: inherit;
+  text-decoration: none;
+}
+
+.site-title a:hover,
+.site-title a:focus {
+  text-decoration: underline;
+  outline: none;
+}
+
+.user-avatar-btn {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: none;
+  background-color: #444;
+  background-size: cover;
+  background-position: center;
+  cursor: pointer;
+  position: relative;
+  flex-shrink: 0;
+}
+
+/* Плейсхолдер иконки 👤, показывается если нет аватара */
+.user-avatar-btn::before {
+  content: "👤";
+  font-size: 24px;
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  width: 100%;
+  position: absolute;
+  top: 0;
+  left: 0;
+  -webkit-user-select: none;
+     -moz-user-select: none;
+          user-select: none;
+  pointer-events: none;
+}
+
+/* Скрываем плейсхолдер, если есть аватар (через класс has-avatar) */
+.user-avatar-btn.has-avatar::before {
+  content: "";
+}
+
+.user-menu {
+  position: absolute;
+  top: 50px;
+  right: 0;
+  background: white;
+  color: #222;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  min-width: 160px;
+  z-index: 150;
+  display: none;
+  flex-direction: column;
+}
+
+.user-menu button {
+  background: none;
+  border: none;
+  padding: 10px 15px;
+  text-align: left;
+  width: 100%;
+  cursor: pointer;
+  font-size: 14px;
+  color: #222;
+  transition: background-color 0.2s;
+}
+
+.user-menu button:hover,
+.user-menu button:focus {
+  background-color: #eee;
+  outline: none;
+}
+
+/* Стили для контента профиля */
+.container > h2 {  /* Заголовок "Личный кабинет" */
+  margin: 20px 0;
+  font-size: 24px;
+  font-weight: 700;
+  color: #2c3e50;
+}
+
+.container form {  /* Форма профиля */
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  padding: 20px;
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+  max-width: 600px;  /* Ограничение ширины формы для читабельности */
+  margin: 0 auto;
+}
+
+.container form label {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  font-weight: 600;
+  color: #555;
+}
+
+.container form input[type="text"],
+.container form input[type="file"] {  /* Поля ввода */
+  padding: 10px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  font-family: inherit;
+  font-size: 14px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.container form input[type="file"]:focus {
+  outline: none;
+  border-color: orange;
+}
+
+.container form img {  /* Аватар в форме */
+  max-width: 100px;
+  border-radius: 50%;  /* Круглая форма для аватара */
+  margin-top: 10px;
+  display: block;
+}
+
+.container form button {  /* Кнопка "Сохранить изменения" */
+  background-color: #27ae60;
+  border: none;
+  color: white;
+  padding: 12px 20px;
+  font-weight: 700;
+  border-radius: 25px;
+  cursor: pointer;
+  font-size: 16px;
+  transition: background-color 0.3s;
+  align-self: flex-start;  /* Выровнять кнопку влево */
+}
+
+.container form button:hover {
+  background-color: #1e8449;
+  outline: none;
+}
+
+/* Сообщения ошибок и успехов */
+.container p[style*="color: red"],
+.container p[style*="color: green"] {
+  font-weight: 600;
+  padding: 10px;
+  border-radius: 6px;
+  margin-bottom: 20px;
+}
+
+.container p[style*="color: red"] {
+  background-color: #f8d7da;
+  border: 1px solid #f5c6cb;
+  color: #721c24;
+}
+
+.container p[style*="color: green"] {
+  background-color: #d4edda;
+  border: 1px solid #c3e6cb;
+  color: #155724;
+}
+
+/* Стили для footer (заимствованы из вашего CSS) */
+footer {
+  height: 70px;
+  display: flex;
+  justify-content: center;
+  background: #222222;
+  color: white;
+  padding: 15px 40px;
+  box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.15);
+  flex-shrink: 0;
+  align-items: center;
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+}
+
+footer p {
+  text-align: center;
+}

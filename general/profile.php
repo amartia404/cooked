@@ -1,168 +1,137 @@
 <?php
+session_start();
+
+header("Cache-Control: no-cache, no-store, must-revalidate"); // HTTP 1.1.
+header("Pragma: no-cache"); // HTTP 1.0.
+header("Expires: 0"); // Прокси-серверы.
+
+// Проверка авторизации
+if (!isset($_SESSION['user_id'])) {
+    header('Location: index.php'); // Перенаправление на главную, если не авторизован
+    exit;
+}
+
 $host = 'localhost';
 $dbname = 'cookbook';
-$username_db = 'root'; // Чтобы не конфликтовать с переменной $username
+$username_db = 'root';
 $password = '';
 
-session_start(); // Восстанавливаем сессию
+try {
+    $pdo = new PDO("mysql:host=$host;dbname=$dbname;charset=utf8", $username_db, $password);
+    $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+} catch (PDOException $e) {
+    die("Ошибка подключения: " . $e->getMessage());
+}
 
-$isLoggedIn = isset($_SESSION['user_id']);
-$userUsername = $_SESSION['username'] ?? null;
-$isAdmin = $_SESSION['is_admin'] ?? false;
-$avatar = $_SESSION['avatarDataUrl'] ?? "";
+// Получение данных пользователя
+$user_id = $_SESSION['user_id'];
+$stmt = $pdo->prepare("SELECT username, avatar FROM users WHERE id = ?");
+$stmt->execute([$user_id]);
+$user = $stmt->fetch(PDO::FETCH_ASSOC);
+
+if (!$user) {
+    die("Пользователь не найден.");
+}
+
+// Обработка формы обновления
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $new_username = trim($_POST['username']);
+    $new_avatar_data = null;
+
+    // Проверка и обработка аватара (если загружен файл)
+    if (isset($_FILES['avatar']) && $_FILES['avatar']['error'] === UPLOAD_ERR_OK) {
+        $file_type = $_FILES['avatar']['type'];
+        if (in_array($file_type, ['image/jpeg', 'image/png', 'image/gif'])) {
+            $file_data = file_get_contents($_FILES['avatar']['tmp_name']);
+            $new_avatar_data = 'data:' . $file_type . ';base64,' . base64_encode($file_data);
+        } else {
+            $error = "Неверный формат файла. Разрешены JPG, PNG, GIF.";
+        }
+    }
+
+    // Обновление логина (если изменился)
+    if ($new_username !== $user['username']) {
+        // Проверка уникальности логина
+        $stmt_check = $pdo->prepare("SELECT id FROM users WHERE username = ? AND id != ?");
+        $stmt_check->execute([$new_username, $user_id]);
+        if ($stmt_check->fetch()) {
+            $error = "Логин уже занят.";
+        } else {
+            $stmt_update = $pdo->prepare("UPDATE users SET username = ? WHERE id = ?");
+            $stmt_update->execute([$new_username, $user_id]);
+            $_SESSION['username'] = $new_username; // Обновление сессии
+        }
+    }
+
+    // Обновление аватара
+    if ($new_avatar_data) {
+        $stmt_update = $pdo->prepare("UPDATE users SET avatar = ? WHERE id = ?");
+        $stmt_update->execute([$new_avatar_data, $user_id]);
+        $_SESSION['avatarDataUrl'] = $new_avatar_data; // Обновление сессии
+    }
+
+    if (!isset($error)) {
+        $success = "Профиль обновлен!";
+        // Перезагрузка данных
+        $stmt = $pdo->prepare("SELECT username, avatar FROM users WHERE id = ?");
+        $stmt->execute([$user_id]);
+        $user = $stmt->fetch(PDO::FETCH_ASSOC);
+    }
+}
 ?>
 
 <!DOCTYPE html>
 <html lang="ru">
-
 <head>
 	<meta charset="UTF-8" />
 	<meta name="viewport" content="width=device-width, initial-scale=1" />
 	<title>Кулинарная книга</title>
 	<link rel="icon" type="image/png" href="img/logo.png">
-	<link rel="stylesheet" href="styles.css" />
-	<link rel="stylesheet" href="css/styles.css" />
+	<!-- <link rel="stylesheet" href="styles.css" /> -->
+	<link rel="stylesheet" href="css/profile.css" />
 </head>
-
 <body>
-<header>
-	<div class="container">
-		<img src="img/logo.png" class="logo">
-		<h1 class="site-title"><a href="index.php" id="homeLink">Кулинарная книга</a></h1>
-		<!-- <nav id="categoryNav" class="category-nav" aria-label="Категории рецептов">
-			<button type="button" class="category-btn">Все</button>
-			<button type="button" class="category-btn">Мясо</button>
-			<button type="button" class="category-btn">Рыба</button>
-			<button type="button" class="category-btn">Веганское</button>
-			<button type="button" class="category-btn">Десерты</button>
-		</nav> -->
-		<nav aria-label="Пользовательское меню" id="userNav" class="userNav">
-			<button class="user-avatar-btn" aria-haspopup="true" aria-expanded="false" aria-label="Меню пользователя" type="button"></button>
-			<div class="user-menu" role="menu">
-				<button type="button" id="userMenu_profile" role="menuitem">Личный кабинет</button>
-				<button type="button" id="userMenu_myRecipes" role="menuitem">Мои рецепты</button>
-				<button type="button" id="userMenu_addRecipe" role="menuitem">Добавить рецепт/Модерация</button>
-				<button type="button" id="userMenu_logout" role="menuitem">Выйти</button>
-			</div>
-		</nav>
-	</div>
-</header>
+    <header>
+        <div class="container">
+            <img src="img/logo.png" class="logo">
+            <h1 class="site-title"><a href="index.php">Кулинарная книга</a></h1>
+            <nav aria-label="Пользовательское меню" class="userNav">
+                <button class="user-avatar-btn" aria-haspopup="true" aria-expanded="false" aria-label="Меню пользователя"></button>
+                <div class="user-menu" role="menu">
+                    <button onclick="location.href='profile.php'">Личный кабинет</button>
+                    <button onclick="location.href='index.php'">Мои рецепты</button>
+                    <button onclick="location.href='index.php'">Добавить рецепт</button>
+                    <button onclick="location.href='logout.php'">Выйти</button>
+                </div>
+            </nav>
+        </div>
+    </header>
 
-<!-- <section id="main" class="main">
-	<div class="container">
-		<div id="recipesSection" class="recipes-section">
-			<div class="recipes-header">
-				<h2>Рецепты</h2>
-				<nav class="sortNav" aria-label="Сортировка рецептов">
-					<button type="button" data-sort-key="relevance" class="">По релевантности</button>
-					<button type="button" data-sort-key="popularity" class="">По популярности</button>
-					<button type="button" data-sort-key="rating" class="">По рейтингу</button>
-					<button type="button" data-sort-key="cookTime" class="">По времени</button>
-					<button type="button" data-sort-key="title" class="">По названию</button>
-				</nav>
-			</div>
-			<section id="recipeListSection" class="recipe-list-section" aria-live="polite" aria-atomic="true" tabindex="0"></section>
-		</div>
+    <div class="container">
+        <h2>Личный кабинет</h2>
+        <?php if (isset($error)): ?>
+            <p style="color: red;"><?php echo $error; ?></p>
+        <?php endif; ?>
+        <?php if (isset($success)): ?>
+            <p style="color: green;"><?php echo $success; ?></p>
+        <?php endif; ?>
+        <form method="POST" enctype="multipart/form-data">
+            <label>Логин: <input type="text" name="username" value="<?php echo htmlspecialchars($user['username']); ?>" required></label>
+            <label>Аватар: <input type="file" name="avatar" accept="image/*">
+                <?php if ($user['avatar']): ?>
+                    <img src="<?php echo htmlspecialchars($user['avatar']); ?>" alt="Текущий аватар" style="max-width: 100px; margin-top: 10px;">
+                <?php endif; ?>
+            </label>
+            <button type="submit">Сохранить изменения</button>
+        </form>
+    </div>
 
-		<div id="ingredientsColumn" class="ingredients-column">
-			<h2 class="Ingredients">Ингредиенты</h2>
-			<aside id="ingredientsFilter" aria-label="Фильтр ингредиентов"></aside>
-		</div>
-	</div>
-</section> -->
+    <footer>
+        <div class="container">
+            <p>© 2025 Кулинарная книга. Все права защищены.</p>
+        </div>
+    </footer>
 
-<!------------------------------------------------------------------------------------------------------->
-<div class="container">
-	<section id="profileSection">
-		<div class="container" style="display: block;">
-			<h2>Личный кабинет</h2>
-			<form id="profileFormSection">
-				<label>Имя пользователя<input type="text" id="profileUsernameSection" readonly /></label>
-				<label>Аватар<input type="file" id="profileAvatarInputSection" accept="image/*" /><img id="profileAvatarPreviewSection" class="profileAvatarPreviewSection" alt="Аватар пользователя"/></label>
-				<button type="submit">Сохранить</button>
-			</form>
-		</div>
-	</section>
-
-	<!-- <section id="myRecipesSection" hidden>
-		<div class="container" style="display: block;">
-			<h2>Мои рецепты</h2>
-			<div id="myRecipesList"></div>
-		</div>
-	</section> -->
-</div>
-
-<!-- <div id="modalOverlay" class="modal-overlay" hidden role="dialog" aria-modal="true" aria-labelledby="modalTitle">
-	<div class="modal-content" role="document">
-		<button id="btnCloseModal" class="btn-close-modal" aria-label="Закрыть форму">×</button>
-		<form id="recipeForm" aria-label="Форма добавления/редактирования рецепта" enctype="multipart/form-data">
-			<h2 id="modalTitle">Добавить новый рецепт</h2>
-			<label>Название рецепта<input type="text" id="inputTitle" placeholder="Например, Борщ" required /></label>
-			<label>Время приготовления (минуты)<input type="number" id="inputCookTime" min="1" placeholder="Например, 45" required /></label>
-			<label>Категория
-				<select id="inputCategory" required>
-					<option value="">Выберите категорию</option>
-					<option value="мясо">Мясо</option>
-					<option value="рыба">Рыба</option>
-					<option value="веганское">Веганское</option>
-					<option value="десерты">Десерты</option>
-				</select>
-			</label>
-			<label>Ингредиенты<div id="ingredientsContainer"></div><button type="button" id="btnAddIngredient">Добавить ингредиент</button></label>
-			<label>Шаги приготовления<div id="stepsContainer"></div><button type="button" id="btnAddStep">Добавить шаг</button></label>
-			<label>Фото рецепта<input type="file" id="inputImageFile" accept="image/*" /><img id="imagePreview" alt="Превью фото рецепта"/></label>
-			<button type="submit" id="btnSubmitRecipe">Добавить рецепт</button>
-		</form>
-	</div>
-</div> -->
-
-<!-- <div id="authModal" class="modal-overlay" hidden role="dialog" aria-modal="true" aria-labelledby="authModalTitle">
-	<div class="modal-content" role="document">
-		<button id="btnCloseAuthModal" class="btn-close-modal" aria-label="Закрыть форму">×</button>
-		<div id="authTabs">
-			<button id="tabLogin" class="auth-tab active" type="button" aria-selected="true" aria-controls="loginForm">Вход</button>
-			<button id="tabRegister" class="auth-tab" type="button" aria-selected="false" aria-controls="registerForm">Регистрация</button>
-		</div>
-
-		<form id="loginForm" class="auth-form" aria-label="Форма входа">
-			<label>Email<input type="email" name="email" required autocomplete="email" /></label>
-			<label>Пароль<input type="password" name="password" required autocomplete="current-password" /></label>
-			<button type="submit">Войти</button>
-		</form>
-
-		<form id="registerForm" class="auth-form" action="php/register.php" method="post" aria-label="Форма регистрации">
-			<label>Логин<input type="text" name="username" required autocomplete="username" /></label>
-			<label>Email<input type="email" name="email" required autocomplete="email" /></label>
-			<label>Пароль<input type="password" name="password" required autocomplete="new-password" /></label>
-			<label>Подтвердите пароль<input type="password" name="password_confirm" required autocomplete="new-password" /></label>
-			<button type="submit">Зарегистрироваться</button>
-		</form>
-	</div>
-</div> -->
-
-<!-- <div id="recipeViewModal" class="modal-overlay" hidden role="dialog" aria-modal="true" aria-labelledby="recipeViewTitle">
-	<div class="modal-content" role="document">
-		<button id="btnCloseRecipeView" class="btn-close-modal" aria-label="Закрыть рецепт">×</button>
-		<h2 id="recipeViewTitle"></h2>
-		<img id="recipeViewImage"/>
-		<p><b>Время приготовления:</b> <span id="recipeViewCookTime"></span> мин</p>
-		<p><b>Категория:</b> <span id="recipeViewCategory"></span></p>
-		<h3>Ингредиенты</h3>
-		<ul id="recipeViewIngredients"></ul>
-		<h3>Шаги приготовления</h3>
-		<ol id="recipeViewSteps"></ol>
-		<p id="recipeViewRating"></p>
-	</div>
-</div> -->
-<!------------------------------------------------------------------------------------------------------->
-
-<footer>
-	<div class="container">
-		<p>© 2025 Кулинарная книга. Все права защищены.</p>
-	</div>
-</footer>
-
-<script src="js/script.js"></script>
-
+    <script src="js/script.js"></script>
 </body>
 </html>
