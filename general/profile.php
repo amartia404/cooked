@@ -23,7 +23,7 @@ try {
     die("Ошибка подключения: " . $e->getMessage());
 }
 
-// Получение данных пользователя
+// Получение данных пользователя (теперь avatar - путь к файлу)
 $user_id = $_SESSION['user_id'];
 $stmt = $pdo->prepare("SELECT username, avatar FROM users WHERE id = ?");
 $stmt->execute([$user_id]);
@@ -36,14 +36,29 @@ if (!$user) {
 // Обработка формы обновления
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $new_username = trim($_POST['username']);
-    $new_avatar_data = null;
+    $new_avatar_path = $user['avatar']; // Старый путь по умолчанию
 
-    // Проверка и обработка аватара (если загружен файл)
+    // Проверка и обработка аватара (если загружен файл) - сохраняем как файл, а не base64
     if (isset($_FILES['avatar']) && $_FILES['avatar']['error'] === UPLOAD_ERR_OK) {
         $file_type = $_FILES['avatar']['type'];
-        if (in_array($file_type, ['image/jpeg', 'image/png', 'image/gif'])) {
-            $file_data = file_get_contents($_FILES['avatar']['tmp_name']);
-            $new_avatar_data = 'data:' . $file_type . ';base64,' . base64_encode($file_data);
+        $allowed_types = ['image/jpeg', 'image/png', 'image/gif'];
+        if (in_array($file_type, $allowed_types)) {
+            $upload_dir = 'img/avatars/'; // Папка для аватаров
+            if (!is_dir($upload_dir)) mkdir($upload_dir, 0755, true);
+
+            $file_ext = pathinfo($_FILES['avatar']['name'], PATHINFO_EXTENSION);
+            $file_name = $user['username'] . '_' . $user_id . '.' . $file_ext; // Уникальное имя
+            $file_path = $upload_dir . $file_name;
+
+            if (move_uploaded_file($_FILES['avatar']['tmp_name'], $file_path)) {
+                // Если старый аватар существует, удаляем (опционально, но рекомендуется)
+                if ($user['avatar'] && file_exists($user['avatar'])) {
+                    unlink($user['avatar']);
+                }
+                $new_avatar_path = $file_path;
+            } else {
+                $error = "Ошибка загрузки файла.";
+            }
         } else {
             $error = "Неверный формат файла. Разрешены JPG, PNG, GIF.";
         }
@@ -60,66 +75,76 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $stmt_update = $pdo->prepare("UPDATE users SET username = ? WHERE id = ?");
             $stmt_update->execute([$new_username, $user_id]);
             $_SESSION['username'] = $new_username; // Обновление сессии
+            $user['username'] = $new_username; // Обновление локального $user
         }
     }
 
-    // Обновление аватара
-    if ($new_avatar_data) {
+    // Обновление аватара в БД
+    if ($new_avatar_path !== $user['avatar']) {
         $stmt_update = $pdo->prepare("UPDATE users SET avatar = ? WHERE id = ?");
-        $stmt_update->execute([$new_avatar_data, $user_id]);
-        $_SESSION['avatarDataUrl'] = $new_avatar_data; // Обновление сессии
+        $stmt_update->execute([$new_avatar_path, $user_id]);
+        $_SESSION['avatar'] = $new_avatar_path; // Обновление сессии (теперь путь, не base64)
+        $user['avatar'] = $new_avatar_path; // Обновление локального $user
     }
 
     if (!isset($error)) {
         $success = "Профиль обновлен!";
-        // Перезагрузка данных
-        $stmt = $pdo->prepare("SELECT username, avatar FROM users WHERE id = ?");
-        $stmt->execute([$user_id]);
-        $user = $stmt->fetch(PDO::FETCH_ASSOC);
     }
 }
+
+$isLoggedIn = true;
+$username = $user['username'];
+$isAdmin = $_SESSION['is_admin'] ?? false;
+$avatar = $user['avatar'] ?? '';
 ?>
+<script>
+window._CURRENT_USER = {
+    'username': '<?= htmlspecialchars($username) ?>',
+    'isAdmin': <?= json_encode($isAdmin) ?>,
+    'avatar': '<?= htmlspecialchars($avatar) ?>'
+};
+</script>
 
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-	<meta charset="UTF-8" />
-	<meta name="viewport" content="width=device-width, initial-scale=1" />
-	<title>Кулинарная книга</title>
-	<link rel="icon" type="image/png" href="img/logo.png">
-	<!-- <link rel="stylesheet" href="styles.css" /> -->
-	<link rel="stylesheet" href="css/profile.css" />
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Кулинарная книга</title>
+    <link rel="icon" type="image/png" href="img/logo.png">
+    <link rel="stylesheet" href="styles.css" />
+    <link rel="stylesheet" href="css/profile.css" />
 </head>
 <body>
     <header>
         <div class="container">
             <img src="img/logo.png" class="logo">
             <h1 class="site-title"><a href="index.php">Кулинарная книга</a></h1>
-            <nav aria-label="Пользовательское меню" class="userNav">
+            <nav aria-label="Пользовательское меню" id="userNav" class="userNav">
                 <button class="user-avatar-btn" aria-haspopup="true" aria-expanded="false" aria-label="Меню пользователя"></button>
                 <div class="user-menu" role="menu">
-                    <button onclick="location.href='profile.php'">Личный кабинет</button>
-                    <button onclick="location.href='index.php'">Мои рецепты</button>
-                    <button onclick="location.href='index.php'">Добавить рецепт</button>
-                    <button onclick="location.href='logout.php'">Выйти</button>
+				<button type="button" id="userMenu_profile" role="menuitem">Личный кабинет</button>
+				<button type="button" id="userMenu_myRecipes" role="menuitem">Мои рецепты</button>
+				<button type="button" id="userMenu_addRecipe" role="menuitem">Добавить рецепт/Модерация</button>
+				<button type="button" id="userMenu_logout" role="menuitem">Выйти</button>
                 </div>
             </nav>
         </div>
     </header>
 
-    <div class="container">
-        <h2>Личный кабинет</h2>
+    <div class="container" style="display: grid">
+        <h2 style=" justify-self: center">Личный кабинет</h2>
         <?php if (isset($error)): ?>
-            <p style="color: red;"><?php echo $error; ?></p>
+            <p style="color: red;"><?php echo htmlspecialchars($error); ?></p>
         <?php endif; ?>
         <?php if (isset($success)): ?>
-            <p style="color: green;"><?php echo $success; ?></p>
+            <p style="color: green;"><?php echo htmlspecialchars($success); ?></p>
         <?php endif; ?>
-        <form method="POST" enctype="multipart/form-data">
+        <form method="POST" enctype="multipart/form-data" style="display: grid;">
             <label>Логин: <input type="text" name="username" value="<?php echo htmlspecialchars($user['username']); ?>" required></label>
             <label>Аватар: <input type="file" name="avatar" accept="image/*">
                 <?php if ($user['avatar']): ?>
-                    <img src="<?php echo htmlspecialchars($user['avatar']); ?>" alt="Текущий аватар" style="max-width: 100px; margin-top: 10px;">
+                    <img src="<?php echo htmlspecialchars($user['avatar']); ?>" alt="Текущий аватар" style="max-width: 100px; max-height: 100px;">
                 <?php endif; ?>
             </label>
             <button type="submit">Сохранить изменения</button>
@@ -132,6 +157,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         </div>
     </footer>
 
-    <script src="js/script.js"></script>
+    <script src="js/profile.js"></script>
 </body>
 </html>

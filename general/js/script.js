@@ -88,6 +88,7 @@ async function fetchApprovedRecipes() {
   const tabLogin = document.getElementById("tabLogin");
   const tabRegister = document.getElementById("tabRegister");
   const loginForm = document.getElementById("loginForm");
+  
   loginForm.addEventListener('submit', async (e) => {
     e.preventDefault();
   
@@ -146,7 +147,7 @@ async function fetchApprovedRecipes() {
           username: result.user.username,
           email: result.user.email,
           isAdmin: false,
-          avatarDataUrl: ''
+          avatar: ''
         };
   
         closeAuthModal();
@@ -192,6 +193,17 @@ async function fetchApprovedRecipes() {
 
     recipeViewCookTime.textContent = recipe.cookTime || "—";
     recipeViewCategory.textContent = recipe.category || "—";
+
+    const recipeViewAuthor = document.getElementById('recipeViewAuthor');
+      if (recipeViewAuthor) {
+      recipeViewAuthor.textContent = recipe.author || "Неизвестный Автор";
+      recipeViewAuthor.href = 'user/' + (recipe.author_id || '');
+      recipeViewAuthor.title = `Профиль ${recipe.author || 'автора'}`;
+      if (!recipe.author_id) {
+        recipeViewAuthor.href = '#';  // Или пустая ссылка, если нет ID
+        recipeViewAuthor.style.pointerEvents = 'none';  // Отключаем клик, если нет ID
+      }
+    }
 
     recipeViewIngredients.innerHTML = "";
     if (recipe.ingredients && recipe.ingredients.length > 0) {
@@ -472,7 +484,7 @@ function renderCategories() {
   }
 
   function renderSortButtons() {
-    sortNav.innerHTML = "";
+    sortContainer.innerHTML = "";  // Изменено: sortNav → sortContainer
     sortOptions.forEach(({ key, label }) => {
       const btn = document.createElement("button");
       btn.type = "button";
@@ -486,11 +498,11 @@ function renderCategories() {
         if (state.sortBy !== key) {
           state.sortBy = key;
           state.sortOrder = "asc";
-          renderSortButtons();
+          renderSortButtons();  // Уже правильно
           filterAndRenderRecipes();
         }
       });
-      sortNav.appendChild(btn);
+      sortContainer.appendChild(btn);  // Изменено: sortNav → sortContainer
     });
   }
 
@@ -1140,39 +1152,44 @@ recipeForm.addEventListener("submit", async (e) => {
     }
   }
 
-  const avatarBtn = document.createElement("button");
-  avatarBtn.className = "user-avatar-btn no-avatar";
-  avatarBtn.setAttribute("aria-haspopup", "true");
-  avatarBtn.setAttribute("aria-expanded", "false");
-  avatarBtn.setAttribute("aria-label", "Меню пользователя");
-  avatarBtn.type = "button";
+  // const avatarBtn = document.createElement("button");
+  // avatarBtn.className = "user-avatar-btn no-avatar";
+  // avatarBtn.setAttribute("aria-haspopup", "true");
+  // avatarBtn.setAttribute("aria-expanded", "false");
+  // avatarBtn.setAttribute("aria-label", "Меню пользователя");
+  // avatarBtn.type = "button";
 
-  const userMenu = document.createElement("div");
-  userMenu.className = "user-menu";
-  userMenu.setAttribute("role", "menu");
+  // const userMenu = document.createElement("div");
+  // userMenu.className = "user-menu";
+  // userMenu.setAttribute("role", "menu");
 
-const menuItems = [
-  { id: "profile", label: "Личный кабинет" },
-  { id: "myRecipes", label: "Мои рецепты" },
-  { id: "addRecipe", label: "Добавить рецепт/Модерация" },
-  { id: "logout", label: "Выйти" },
-];
+// const menuItems = [
+//   { id: "profile", label: "Личный кабинет" },
+//   { id: "myRecipes", label: "Мои рецепты" },
+//   { id: "addRecipe", label: "Добавить рецепт/Модерация" },
+//   { id: "logout", label: "Выйти" },
+// ];
 
-menuItems.forEach(({ id, label }) => {
-  const btn = document.createElement("button");
-  btn.type = "button";
-  btn.textContent = label;
-  btn.id = `userMenu_${id}`;
-  btn.setAttribute("role", "menuitem");
-  userMenu.appendChild(btn);
-});
+// menuItems.forEach(({ id, label }) => {
+//   const btn = document.createElement("button");
+//   btn.type = "button";
+//   btn.textContent = label;
+//   btn.id = `userMenu_${id}`;
+//   btn.setAttribute("role", "menuitem");
+//   userMenu.appendChild(btn);
+// });
 
-  avatarBtn.appendChild(userMenu);
-  userNav.style.position = "relative";
+  // avatarBtn.appendChild(userMenu);
+  // userNav.style.position = "relative";
+
+// ДОБАВИТЬ: Ссылки на статические элементы из HTML (вместо создания)
+const avatarBtn = document.querySelector('.user-avatar-btn');  // Кнопка из HTML
+const userMenu = document.querySelector('.user-menu');         // Меню из HTML
+userNav.style.position = "relative";  // Оставить, если нужно для позиционирования
 
   function updateAvatarBtn(user) {
-    if (user && user.avatarDataUrl) {
-      avatarBtn.style.backgroundImage = `url(${user.avatarDataUrl})`;
+    if (user && user.avatar) {
+      avatarBtn.style.backgroundImage = `url(${user.avatar})`;
       avatarBtn.classList.remove("no-avatar");
       avatarBtn.classList.add("has-avatar");
     } else {
@@ -1231,16 +1248,18 @@ menuItems.forEach(({ id, label }) => {
 
     if (id === "profile") {
       window.location.href = "profile.php";
-    } else if (id === "myRecipes") {
+    } else if (id === "myRecipes") {  // Изменено: правильный else if
       window.location.href = "MyRecipes.php";
-    } else if (id === "addRecipe") {
+    } else if (id === "addRecipe") {  // Изменено: правильный else if
       if (state.currentUser && state.currentUser.isAdmin) {
         window.location.href = "moderation.php";
-      } else {openRecipeModal();}}
-      else if (id === "logout") {
-        logoutUser();
+      } else {
+        openRecipeModal();
       }
-    });
+    } else if (id === "logout") {  // Изменено: правильный else if
+      logoutUser();
+    }
+  });
 
   const profileSection = document.getElementById("profileSection");
   const profileFormSection = document.getElementById("profileFormSection");
@@ -1276,19 +1295,33 @@ menuItems.forEach(({ id, label }) => {
     }
   }
 
-  function updateUserNav() {
-    userNav.innerHTML = "";
-    if (state.currentUser) {
-      updateAvatarBtn(state.currentUser);
-      userNav.appendChild(avatarBtn);
-    } else {
-      avatarBtn.style.backgroundImage = "";
-      avatarBtn.classList.add("no-avatar");
-      avatarBtn.setAttribute("aria-expanded", "false");
-      avatarBtn.classList.remove("show");
-      if (avatarBtn.parentNode) avatarBtn.parentNode.removeChild(avatarBtn);
+  // function updateUserNav() {
+  //   userNav.innerHTML = "";
+  //   if (state.currentUser) {
+  //     updateAvatarBtn(state.currentUser);
+  //     userNav.appendChild(avatarBtn);
+  //   } else {
+  //     avatarBtn.style.backgroundImage = "";
+  //     avatarBtn.classList.add("no-avatar");
+  //     avatarBtn.setAttribute("aria-expanded", "false");
+  //     avatarBtn.classList.remove("show");
+  //     if (avatarBtn.parentNode) avatarBtn.parentNode.removeChild(avatarBtn);
 
-      userNav.appendChild(avatarBtn);
+  //     userNav.appendChild(avatarBtn);
+  //   }
+  // }
+
+  function updateUserNav() {
+    // Кнопка всегда видна — для клика на вход/меню
+    avatarBtn.style.display = "block";
+    
+    if (state.currentUser) {
+      updateAvatarBtn(state.currentUser);  // Применить аватар из БД/сессии
+      avatarBtn.classList.add("has-avatar");
+    } else {
+      updateAvatarBtn(null);  // Сбросить аватар
+      avatarBtn.classList.remove("has-avatar");
+      avatarBtn.classList.add("no-avatar");
     }
   }
 

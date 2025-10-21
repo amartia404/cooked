@@ -1,20 +1,42 @@
 <?php
 $host = 'localhost';
 $dbname = 'cookbook';
-$username = 'root';
-$password = '';
+$dbUsername = 'root';
+$dbPassword = '';
 
 session_start();
 $isLoggedIn = isset($_SESSION['user_id']);
 $username = $_SESSION['username'] ?? null;
 $isAdmin = $_SESSION['is_admin'] ?? false;
-$avatar = $_SESSION['avatarDataUrl'] ?? "";
+$avatar = $_SESSION['avatar'] ?? "";
+
+if ($isLoggedIn) {
+  try {
+    $pdo = new PDO("mysql:host=$host;dbname=$dbname;charset=utf8", $dbUsername, $dbPassword);
+    $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+    
+    $stmt = $pdo->prepare("SELECT username, avatar, is_admin FROM users WHERE id = ?");
+    $stmt->execute([$_SESSION['user_id']]);
+    $user = $stmt->fetch(PDO::FETCH_ASSOC);
+    
+    if ($user) {
+      $username = $user['username'];
+      $isAdmin = (bool) $user['is_admin'];
+      $avatar = $user['avatar'] ?? "";
+      $_SESSION['avatar'] = $avatar;
+      $_SESSION['username'] = $username;
+      $_SESSION['is_admin'] = $isAdmin;
+    }
+  } catch (PDOException $e) {
+    error_log("Error loading user data: " . $e->getMessage());
+  }
+}
 ?>
 <script>
 	window._CURRENT_USER = <?= json_encode($isLoggedIn ? [
 		'username' => $username,
 		'isAdmin' => (bool) $isAdmin,
-		'avatarDataUrl' => $avatar,
+		'avatar' => $avatar,
 	] : null) ?>;
 </script>
 
@@ -131,6 +153,7 @@ $avatar = $_SESSION['avatarDataUrl'] ?? "";
 		<img id="recipeViewImage"/>
 		<p><b>Время приготовления:</b> <span id="recipeViewCookTime"></span> мин</p>
 		<p><b>Категория:</b> <span id="recipeViewCategory"></span></p>
+		<p><b>Автор:</b> <a id="recipeViewAuthor" href="#"></a></p>
 		<h3>Ингредиенты</h3>
 		<ul id="recipeViewIngredients"></ul>
 		<h3>Шаги приготовления</h3>

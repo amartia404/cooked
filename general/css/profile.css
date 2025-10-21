@@ -155,6 +155,7 @@ header {
   gap: 10px;
   font-weight: 600;
   color: #555;
+  width: 250px;
 }
 
 .container form input[type="text"],
@@ -174,11 +175,14 @@ header {
 }
 
 .container form img {  /* Аватар в форме */
-  max-width: 100px;
-  border-radius: 50%;  /* Круглая форма для аватара */
+  width: 250px;       /* Фиксированная ширина */
+  height: 250px;      /* Фиксированная высота (теперь квадрат) */
+  border-radius: 50%; /* Круглая форма */
   margin-top: 10px;
   display: block;
+  object-fit: cover;  /* Сохраняет пропорции и обрезает лишнее */
 }
+
 
 .container form button {  /* Кнопка "Сохранить изменения" */
   background-color: #27ae60;
@@ -201,6 +205,7 @@ header {
 /* Сообщения ошибок и успехов */
 .container p[style*="color: red"],
 .container p[style*="color: green"] {
+  justify-self: center;
   font-weight: 600;
   padding: 10px;
   border-radius: 6px;
