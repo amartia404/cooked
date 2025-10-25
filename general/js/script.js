@@ -194,16 +194,16 @@ async function fetchApprovedRecipes() {
     recipeViewCookTime.textContent = recipe.cookTime || "—";
     recipeViewCategory.textContent = recipe.category || "—";
 
-    const recipeViewAuthor = document.getElementById('recipeViewAuthor');
-      if (recipeViewAuthor) {
-      recipeViewAuthor.textContent = recipe.author || "Неизвестный Автор";
-      recipeViewAuthor.href = 'user/' + (recipe.author_id || '');
-      recipeViewAuthor.title = `Профиль ${recipe.author || 'автора'}`;
-      if (!recipe.author_id) {
-        recipeViewAuthor.href = '#';  // Или пустая ссылка, если нет ID
-        recipeViewAuthor.style.pointerEvents = 'none';  // Отключаем клик, если нет ID
-      }
-    }
+    // const recipeViewAuthor = document.getElementById('recipeViewAuthor');
+    //   if (recipeViewAuthor) {
+    //   recipeViewAuthor.textContent = recipe.author || "Неизвестный Автор";
+    //   recipeViewAuthor.href = 'user/' + (recipe.author_id || '');
+    //   recipeViewAuthor.title = `Профиль ${recipe.author || 'автора'}`;
+    //   if (!recipe.author_id) {
+    //     recipeViewAuthor.href = '#';  // Или пустая ссылка, если нет ID
+    //     recipeViewAuthor.style.pointerEvents = 'none';  // Отключаем клик, если нет ID
+    //   }
+    // }
 
     recipeViewIngredients.innerHTML = "";
     if (recipe.ingredients && recipe.ingredients.length > 0) {

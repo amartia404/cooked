@@ -1,16 +1,44 @@
 <?php
 $host = 'localhost';
 $dbname = 'cookbook';
-$username_db = 'root';
-$password = '';
+$dbUsername = 'root';
+$dbPassword = '';
 
 session_start();
-
 $isLoggedIn = isset($_SESSION['user_id']);
-$userUsername = $_SESSION['username'] ?? null;
+$username = $_SESSION['username'] ?? null;
 $isAdmin = $_SESSION['is_admin'] ?? false;
-$avatar = $_SESSION['avatarDataUrl'] ?? "";
+$avatar = $_SESSION['avatar'] ?? "";
+
+if ($isLoggedIn) {
+  try {
+    $pdo = new PDO("mysql:host=$host;dbname=$dbname;charset=utf8", $dbUsername, $dbPassword);
+    $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+    
+    $stmt = $pdo->prepare("SELECT username, avatar, is_admin FROM users WHERE id = ?");
+    $stmt->execute([$_SESSION['user_id']]);
+    $user = $stmt->fetch(PDO::FETCH_ASSOC);
+    
+    if ($user) {
+      $username = $user['username'];
+      $isAdmin = (bool) $user['is_admin'];
+      $avatar = $user['avatar'] ?? "";
+      $_SESSION['avatar'] = $avatar;
+      $_SESSION['username'] = $username;
+      $_SESSION['is_admin'] = $isAdmin;
+    }
+  } catch (PDOException $e) {
+    error_log("Error loading user data: " . $e->getMessage());
+  }
+}
 ?>
+<script>
+	window._CURRENT_USER = <?= json_encode($isLoggedIn ? [
+		'username' => $username,
+		'isAdmin' => (bool) $isAdmin,
+		'avatar' => $avatar,
+	] : null) ?>;
+</script>
 
 <!DOCTYPE html>
 <html lang="ru">
@@ -56,7 +84,8 @@ $avatar = $_SESSION['avatarDataUrl'] ?? "";
 	</div>
 </footer>
 
-<script src="js/script.js"></script>
+<!-- <script src="js/script.js"></script> -->
+<script src="js/profile.js"></script>
 
 <script>
 	async function loadMyRecipes() {

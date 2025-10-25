@@ -1,4 +1,9 @@
 <?php
+$host = 'localhost';
+$dbname = 'cookbook';
+$username_db = 'root';
+$password = '';
+
 session_start();
 
 header("Cache-Control: no-cache, no-store, must-revalidate"); // HTTP 1.1.
@@ -10,11 +15,6 @@ if (!isset($_SESSION['user_id'])) {
     header('Location: index.php'); // Перенаправление на главную, если не авторизован
     exit;
 }
-
-$host = 'localhost';
-$dbname = 'cookbook';
-$username_db = 'root';
-$password = '';
 
 try {
     $pdo = new PDO("mysql:host=$host;dbname=$dbname;charset=utf8", $username_db, $password);

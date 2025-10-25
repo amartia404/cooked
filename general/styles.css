@@ -428,7 +428,7 @@ form button[type="submit"]:hover,
 }
 
 #profileSection, #myRecipesSection {
-  max-width: 1110px;
+  max-width: 1320px;
   margin: 0 auto;
   background: white;
   padding: 10px 30px 30px 30px;
