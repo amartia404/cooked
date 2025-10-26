@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Хост: 127.0.0.1
--- Время создания: Окт 25 2025 г., 21:05
+-- Время создания: Окт 26 2025 г., 03:40
 -- Версия сервера: 10.4.32-MariaDB
 -- Версия PHP: 8.2.12
 
@@ -102,13 +102,6 @@ CREATE TABLE `ratings` (
   `created_at` timestamp NOT NULL DEFAULT current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
---
--- Дамп данных таблицы `ratings`
---
-
-INSERT INTO `ratings` (`id`, `user_id`, `recipe_id`, `rating`, `created_at`) VALUES
-(1, 2, 8, 4, '2025-10-21 12:59:43');
-
 -- --------------------------------------------------------
 
 --
@@ -134,7 +127,7 @@ CREATE TABLE `recipes` (
 --
 
 INSERT INTO `recipes` (`id`, `user_id`, `title`, `cook_time`, `category`, `ingredients`, `steps`, `image_path`, `status`, `created_at`, `updated_at`) VALUES
-(8, 2, '213', 123, 'рыба', '[\"123\"]', '[\"123\"]', 'php/uploads/recipe_68e2733e4e97c_4ffad38eefb677a245154a8e653b9bb9.jpg', 'approved', '2025-10-05 13:31:42', '2025-10-05 13:32:03');
+(9, 2, 'Борщ', 45, 'мясо', '[\"Картофель\",\"Лук\",\"Свекла\",\"Морковь\"]', '[\"Прочитать рецепт\"]', 'php/uploads/recipe_68fd6b2c6fc03_clnBPzI-49GJ76tBQGEzvW-H-9Up6ckiGyrLNfVfimqf4w-CgI2YMqUaCNEDu1ezoQKJwhgwAZ87hgf0Z3NQgpY4U-30zCGzT_0Zw9Kzg6mfh-rAXXi5NTiA.webp', 'approved', '2025-10-26 00:28:28', '2025-10-26 00:29:27');
 
 -- --------------------------------------------------------
 
@@ -158,7 +151,7 @@ CREATE TABLE `users` (
 
 INSERT INTO `users` (`id`, `username`, `email`, `password_hash`, `is_admin`, `created_at`, `avatar`) VALUES
 (2, 'amartia', 'sn4k@bk.ru', '$2y$10$PltMhM2.UQ5qB14KlkF19e6Nk0Rv8G8FjW1fjCiPCv9LgPFjh2AAK', 0, '2025-09-17 08:01:19', 'img/avatars/amartia_2.jpg'),
-(4, 'admin', 'admin@bk.ru', '$2y$10$gJjdNhUWhJabIb0nB7VpbOJFkyETywYAFkfLk5Cs.2hOKftf4DIj2', 1, '2025-10-05 11:19:56', '');
+(4, 'admin', 'admin@bk.ru', '$2y$10$gJjdNhUWhJabIb0nB7VpbOJFkyETywYAFkfLk5Cs.2hOKftf4DIj2', 1, '2025-10-05 11:19:56', 'img/avatars/admin_4.jpg');
 
 --
 -- Индексы сохранённых таблиц
@@ -228,7 +221,7 @@ ALTER TABLE `ratings`
 -- AUTO_INCREMENT для таблицы `recipes`
 --
 ALTER TABLE `recipes`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=9;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=10;
 
 --
 -- AUTO_INCREMENT для таблицы `users`

@@ -33,12 +33,12 @@ if (!$user) {
     die("Пользователь не найден.");
 }
 
-// Обработка формы обновления
+// Обработка формы обновления (упрощено для фокуса)
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $new_username = trim($_POST['username']);
     $new_avatar_path = $user['avatar']; // Старый путь по умолчанию
 
-    // Проверка и обработка аватара (если загружен файл) - сохраняем как файл, а не base64
+    // Обработка аватара
     if (isset($_FILES['avatar']) && $_FILES['avatar']['error'] === UPLOAD_ERR_OK) {
         $file_type = $_FILES['avatar']['type'];
         $allowed_types = ['image/jpeg', 'image/png', 'image/gif'];
@@ -51,7 +51,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $file_path = $upload_dir . $file_name;
 
             if (move_uploaded_file($_FILES['avatar']['tmp_name'], $file_path)) {
-                // Если старый аватар существует, удаляем (опционально, но рекомендуется)
                 if ($user['avatar'] && file_exists($user['avatar'])) {
                     unlink($user['avatar']);
                 }
@@ -64,9 +63,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
     }
 
-    // Обновление логина (если изменился)
+    // Обновление логина
     if ($new_username !== $user['username']) {
-        // Проверка уникальности логина
         $stmt_check = $pdo->prepare("SELECT id FROM users WHERE username = ? AND id != ?");
         $stmt_check->execute([$new_username, $user_id]);
         if ($stmt_check->fetch()) {
@@ -79,11 +77,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
     }
 
-    // Обновление аватара в БД
+    // Обновление аватара
     if ($new_avatar_path !== $user['avatar']) {
         $stmt_update = $pdo->prepare("UPDATE users SET avatar = ? WHERE id = ?");
         $stmt_update->execute([$new_avatar_path, $user_id]);
-        $_SESSION['avatar'] = $new_avatar_path; // Обновление сессии (теперь путь, не base64)
+        $_SESSION['avatar'] = $new_avatar_path; // Обновление сессии
         $user['avatar'] = $new_avatar_path; // Обновление локального $user
     }
 
@@ -123,17 +121,17 @@ window._CURRENT_USER = {
             <nav aria-label="Пользовательское меню" id="userNav" class="userNav">
                 <button class="user-avatar-btn" aria-haspopup="true" aria-expanded="false" aria-label="Меню пользователя"></button>
                 <div class="user-menu" role="menu">
-				<button type="button" id="userMenu_profile" role="menuitem">Личный кабинет</button>
-				<button type="button" id="userMenu_myRecipes" role="menuitem">Мои рецепты</button>
-				<button type="button" id="userMenu_addRecipe" role="menuitem">Добавить рецепт/Модерация</button>
-				<button type="button" id="userMenu_logout" role="menuitem">Выйти</button>
+                    <button type="button" id="userMenu_profile" role="menuitem">Личный кабинет</button>
+                    <button type="button" id="userMenu_myRecipes" role="menuitem">Мои рецепты</button>
+                    <button type="button" id="userMenu_addRecipe" role="menuitem">Добавить рецепт/Модерация</button>
+                    <button type="button" id="userMenu_logout" role="menuitem">Выйти</button>
                 </div>
             </nav>
         </div>
     </header>
 
     <div class="container" style="display: grid">
-        <h2 style=" justify-self: center">Личный кабинет</h2>
+        <h2 style="justify-self: center">Личный кабинет</h2>
         <?php if (isset($error)): ?>
             <p style="color: red;"><?php echo htmlspecialchars($error); ?></p>
         <?php endif; ?>

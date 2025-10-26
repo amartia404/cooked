@@ -245,6 +245,27 @@
   padding: 20px 30px 30px;
 }
 
+#recipeViewModal p {
+  margin-bottom: 10px;
+}
+
+#recipeViewModal h3 {
+  margin-top: 10px;
+  margin-bottom: 10px;
+}
+
+#recipeViewModal ul, #recipeViewModal ol {
+  padding-left: 20px;
+}
+
+#recipeViewModal li {
+  margin-bottom: 5px;
+}
+
+#recipeViewRating{
+  margin-top: 20px;
+}
+
 /* Модальное окно */
 .modal-overlay {
   color: black;
@@ -266,14 +287,13 @@
 
 .modal-content {
   background: white;
-  border-radius: 10px;
-  max-width: 600px;
-  width: 90%;
-  max-height: 90vh;
+  padding: 20px;
+  border-radius: 8px;
+  max-width: 90%;
+  max-height: 90%;
   overflow-y: auto;
-  padding: 25px 30px 40px;
   position: relative;
-  box-shadow: 0 8px 24px rgba(0,0,0,0.2);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
 }
 
 /* Кнопка закрытия модального окна */

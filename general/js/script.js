@@ -194,16 +194,16 @@ async function fetchApprovedRecipes() {
     recipeViewCookTime.textContent = recipe.cookTime || "—";
     recipeViewCategory.textContent = recipe.category || "—";
 
-    // const recipeViewAuthor = document.getElementById('recipeViewAuthor');
-    //   if (recipeViewAuthor) {
-    //   recipeViewAuthor.textContent = recipe.author || "Неизвестный Автор";
-    //   recipeViewAuthor.href = 'user/' + (recipe.author_id || '');
-    //   recipeViewAuthor.title = `Профиль ${recipe.author || 'автора'}`;
-    //   if (!recipe.author_id) {
-    //     recipeViewAuthor.href = '#';  // Или пустая ссылка, если нет ID
-    //     recipeViewAuthor.style.pointerEvents = 'none';  // Отключаем клик, если нет ID
-    //   }
-    // }
+    const recipeViewAuthor = document.getElementById('recipeViewAuthor');
+      if (recipeViewAuthor) {
+      recipeViewAuthor.textContent = recipe.author || "Неизвестный Автор";
+      recipeViewAuthor.href = 'user/' + (recipe.author_id || '');
+      recipeViewAuthor.title = `Профиль ${recipe.author || 'автора'}`;
+      if (!recipe.author_id) {
+        recipeViewAuthor.href = '#';  // Или пустая ссылка, если нет ID
+        recipeViewAuthor.style.pointerEvents = 'none';  // Отключаем клик, если нет ID
+      }
+    }
 
     recipeViewIngredients.innerHTML = "";
     if (recipe.ingredients && recipe.ingredients.length > 0) {
@@ -861,13 +861,21 @@ function deleteRecipe(recipeId) {
     inputTitle.focus();
   }
 
-  function closeRecipeModal() {
-    modalOverlay.hidden = true;
-    state.editingRecipeId = null;
-    recipeForm.reset();
-    imagePreview.style.display = "none";
-    imagePreview.src = "";
+function closeRecipeModal() {
+  modalOverlay.hidden = true;
+  state.editingRecipeId = null;
+  recipeForm.reset();
+  imagePreview.style.display = "none";
+  imagePreview.src = "";
+
+  // Сброс URL-параметра если он есть
+  const urlParams = new URLSearchParams(window.location.search);
+  if (urlParams.has('openModal')) {
+    const url = new URL(window.location);
+    url.searchParams.delete('openModal');
+    window.history.replaceState(null, null, url.toString());  // Заменяет URL без перезагрузки
   }
+}
 
 recipeForm.addEventListener("submit", async (e) => {
   e.preventDefault();
@@ -1357,6 +1365,12 @@ async function init() {
   renderCategories();
   renderIngredientsFilter();
   filterAndRenderRecipes();
+
+  const urlParams = new URLSearchParams(window.location.search);
+  if (urlParams.get('openModal') === 'addRecipe') {
+    openRecipeModal();
+  }
+
 }
 
   init();

@@ -1,0 +1,266 @@
+@charset "UTF-8";
+
+/* Основные сбросы */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+  background-image: url(../img/1679657594_bogatyr-club-p-fon-shkolnii-serii-krasivo-36.jpg);
+  color: #333;
+}
+
+.container {
+  max-width: 1320px;
+  margin: 0 auto;
+  display: flex;
+}
+
+/* Header стили */
+header {
+  background: #222222;
+  color: white;
+  padding: 15px 0;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  margin-bottom: 60px;
+}
+
+.logo {
+  height: 40px;
+}
+
+.site-title {
+  margin: 0;
+  font-size: 28px;
+  flex-grow: 1;
+  font-weight: 700;
+}
+
+.site-title a {
+  color: inherit;
+  text-decoration: none;
+}
+
+.site-title a:hover,
+.site-title a:focus {
+  text-decoration: underline;
+  outline: none;
+}
+
+.userNav {
+  margin-left: 30px;
+  position: relative;
+  display: flex;
+}
+
+.user-avatar-btn {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: none;
+  background-color: #444;
+  background-size: cover;
+  background-position: center;
+  cursor: pointer;
+  position: relative;
+  flex-shrink: 0;
+}
+
+.user-avatar-btn::before {
+  content: "👤";
+  font-size: 24px;
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  width: 100%;
+  position: absolute;
+  top: 0;
+  left: 0;
+  -webkit-user-select: none;
+     -moz-user-select: none;
+          user-select: none;
+  pointer-events: none;
+}
+
+.user-avatar-btn.has-avatar::before {
+  content: "";
+}
+
+.user-menu {
+  position: absolute;
+  top: 50px;
+  right: 0;
+  background: white;
+  color: #222;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  min-width: 160px;
+  z-index: 150;
+  display: none;
+  flex-direction: column;
+}
+
+.user-menu button {
+  background: none;
+  border: none;
+  padding: 10px 15px;
+  text-align: left;
+  width: 100%;
+  cursor: pointer;
+  font-size: 14px;
+  color: #222;
+  transition: background-color 0.2s;
+}
+
+.user-menu button:hover,
+.user-menu button:focus {
+  background-color: #eee;
+  outline: none;
+}
+
+/* Main секция */
+.main {
+  max-width: 1320px;
+  margin: 0 auto;
+  background: white;
+  padding: 20px 20px 20px 40px;
+  border-radius: 10px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+  margin-top: 60px;
+  margin-bottom: 100px; /* Для footer */
+}
+
+/* Секция с рецептами */
+#myRecipesSection h2 {
+  margin: 20px 0;
+}
+
+.recipe-list-section {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 30px;
+}
+
+.recipe-card {
+  width: 330px;
+  height: 350px;
+  display: flex;
+  flex-direction: column;
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+  cursor: pointer;
+  transition: box-shadow 0.3s;
+  overflow: hidden;
+  padding: 0;
+}
+
+.recipe-card:hover,
+.recipe-card:focus-visible {
+  box-shadow: 0 6px 15px rgba(0, 0, 0, 0.1);
+  outline: none;
+}
+
+.recipe-card img {
+  width: 100%;
+  height: 180px;
+  -o-object-fit: cover;
+     object-fit: cover;
+  border-bottom: 1px solid #ddd;
+  flex-shrink: 0;
+  display: block;
+}
+
+.recipe-card .recipe-info {
+  padding: 12px 15px;
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  font-size: 14px;
+  color: #333;
+}
+
+.recipe-card .recipe-name {
+  font-size: 18px;
+  color: #2c3e50;
+  margin: 0 0 8px 0;
+  flex-shrink: 0;
+  font-weight: 600;
+}
+
+.recipe-card p {
+  margin: 4px 0;
+  color: #555;
+}
+
+/* Модальное окно */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.modal-content {
+  background: white;
+  padding: 20px;
+  border-radius: 8px;
+  max-width: 600px;
+  width: 90%;
+  max-height: 90vh;
+  overflow-y: auto;
+  position: relative;
+}
+
+.btn-close-modal {
+  position: absolute;
+  top: 10px;
+  right: 15px;
+  background: none;
+  border: none;
+  font-size: 24px;
+  cursor: pointer;
+}
+
+/* Сообщение "нет рецептов" */
+.no-recipes {
+  margin: 20px 0;
+  grid-column: span 4; /* Занимает всю ширину */
+}
+
+/* Footer стили */
+footer {
+  height: 70px;
+  display: flex;
+  justify-content: center;
+  background: #222222;
+  color: white;
+  padding: 15px 40px;
+  box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.15);
+  flex-shrink: 0;
+  align-items: center;
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+}
+
+footer p {
+  text-align: center;
+}

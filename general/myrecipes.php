@@ -31,13 +31,14 @@ if ($isLoggedIn) {
     error_log("Error loading user data: " . $e->getMessage());
   }
 }
-
-// Если не залогинен или не админ, перенаправляем
-if (!$isLoggedIn || !$isAdmin) {
-    header('Location: index.php');
-    exit();
-}
 ?>
+<script>
+	window._CURRENT_USER = <?= json_encode($isLoggedIn ? [
+		'username' => $username,
+		'isAdmin' => (bool) $isAdmin,
+		'avatar' => $avatar,
+	] : null) ?>;
+</script>
 
 <!DOCTYPE html>
 <html lang="ru">
@@ -56,13 +57,6 @@ if (!$isLoggedIn || !$isAdmin) {
 	<div class="container">
 		<img src="img/logo.png" class="logo">
 		<h1 class="site-title"><a href="index.php" id="homeLink">Кулинарная книга</a></h1>
-		<nav id="categoryNav" class="category-nav" aria-label="Категории рецептов">
-			<button type="button" class="category-btn">Все</button>
-			<button type="button" class="category-btn">Мясо</button>
-			<button type="button" class="category-btn">Рыба</button>
-			<button type="button" class="category-btn">Веганское</button>
-			<button type="button" class="category-btn">Десерты</button>
-		</nav>
 		<nav aria-label="Пользовательское меню" id="userNav" class="userNav">
 			<button class="user-avatar-btn" aria-haspopup="true" aria-expanded="false" aria-label="Меню пользователя" type="button"></button>
 			<div class="user-menu" role="menu">
@@ -76,40 +70,37 @@ if (!$isLoggedIn || !$isAdmin) {
 </header>
 
 <div class="container">
-  <section id="moderationSection">
-    <div class="container" style="display: block;">
-      <h2>Модерация новых рецептов</h2>
-      <div id="moderationList"></div>
-    </div>
-  </section>  
+	<section id="myRecipesSection">
+		<div class="container" style="display: block;">
+			<h2>Мои рецепты</h2>
+			<div id="myRecipesList"></div>
+		</div>
+	</section>
 </div>
 
 <div id="recipeViewModal" class="modal-overlay" hidden role="dialog" aria-modal="true" aria-labelledby="recipeViewTitle">
-  <div class="modal-content" role="document">
-    <button type="button" class="btn-close-modal" id="btnCloseRecipeView" aria-label="Закрыть рецепт">×</button>
-    <h2 id="recipeViewTitle"></h2>
-    <img id="recipeViewImage" alt="" style="max-width: 100%; border-radius: 8px; margin-bottom: 15px; display: none;" />
-    <p><b>Время приготовления:</b> <span id="recipeViewCookTime"></span> мин</p>
-    <p><b>Категория:</b> <span id="recipeViewCategory"></span></p>
-    <h3>Ингредиенты</h3>
-    <ul id="recipeViewIngredients"></ul>
-    <h3>Шаги приготовления</h3>
-    <ol id="recipeViewSteps"></ol>
-    <p id="recipeViewRating"></p>
-  </div>
+	<div class="modal-content" role="document">
+		<button id="btnCloseRecipeView" class="btn-close-modal" aria-label="Закрыть рецепт">×</button>
+		<h2 id="recipeViewTitle"></h2>
+		<img id="recipeViewImage"/>
+		<p><b>Время приготовления:</b> <span id="recipeViewCookTime"></span> мин</p>
+		<p><b>Категория:</b> <span id="recipeViewCategory"></span></p>
+		<p><b>Автор:</b> <a id="recipeViewAuthor" href="#"></a></p>
+		<h3>Ингредиенты</h3>
+		<ul id="recipeViewIngredients"></ul>
+		<h3>Шаги приготовления</h3>
+		<ol id="recipeViewSteps"></ol>
+		<p id="recipeViewRating"></p>
+	</div>
 </div>
 
 <footer>
-  <div class="container">
-    <p>© 2024 Кулинарная книга. Все права защищены.</p>
-  </div>
+	<div class="container">
+		<p>© 2025 Кулинарная книга. Все права защищены.</p>
+	</div>
 </footer>
 
-<script>
-  window._CURRENT_USER = <?php echo json_encode(['username' => $username, 'isAdmin' => $isAdmin, 'avatar' => $avatar]); ?>;
-</script>
-
-<script src="js/moderation.js"></script>
+<script src="js/myrecipes.js"></script>
 
 </body>
 </html>

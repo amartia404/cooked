@@ -105,7 +105,8 @@
     } else if (id === "myRecipes") {
       window.location.href = "MyRecipes.php"; // Или MyRecipes.php, в зависимости от структуры
     } else if (id === "addRecipe") {
-      window.location.href = "index.php"; // Перенаправление на главную для добавления
+      // Изменено: перенаправление с параметром для открытия модального окна
+      window.location.href = "index.php?openModal=addRecipe";
     } else if (id === "logout") {
       logoutUser();
     }
